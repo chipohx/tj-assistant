@@ -1,10 +1,19 @@
 from fastapi import FastAPI
-from app.api.endpoints import chat
+
+from app.database.session import SessionLocal, engine
+from app.models.models import Base
+
+Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 app = FastAPI()
-
-app.include_router(chat.router, prefix="/api", tags=["chat"])
-
 
 @app.get("/")
 async def index():
