@@ -11,10 +11,10 @@ categories_path = current_dir / "categories"
 def parse_article(url: str) -> dict:
     response = requests.get(url)
 
-    html_content = ""
-
-    if response.status_code == 200:
-        html_content = response.text
+    if response.status_code != 200:
+       return f"Status code: {response.status_code}"
+        
+    html_content = response.text
 
     article_data = {}
 
@@ -92,14 +92,23 @@ def get_category_urls(category_filename: str) -> str:
       return category_urls
 
 
-def parse_category(category_filename: str) -> list:
-   category_data = []
-   category_urls = get_category_urls(category_filename)
+def parse_category(category_filename: str, articles_to_parse: int) -> list:
+  category_data = []
+  category_urls = get_category_urls(category_filename)
 
-   for article_url in category_urls:
-      article_data = parse_article(article_url)
-      category_data.append(article_data)
+  for article_url_i in range(articles_to_parse):
+      article_url = category_urls[article_url_i]
+      try:
+        article_data = parse_article(article_url)
+        category_data.append(article_data)
+        print(f"Successfully parsed: {article_url}")
+      except Exception as e:
+        print(f"Error parsing {article_url}: {e}")
+        continue 
+  return category_data
 
 
-def get_category_file_names() -> list:
+def get_category_filenames() -> list:
   return os.listdir(categories_path)
+
+
