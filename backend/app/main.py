@@ -5,6 +5,7 @@ from app.models.models import Base
 
 Base.metadata.create_all(bind=engine)
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -12,7 +13,9 @@ def get_db():
     finally:
         db.close()
 
+
 app = FastAPI()
+
 
 @app.get("/")
 async def index():
