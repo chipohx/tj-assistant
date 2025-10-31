@@ -5,6 +5,7 @@ from app.models.models import Base
 
 Base.metadata.create_all(bind=engine)
 
+
 def get_db():
     db = SessionLocal()
     try:
