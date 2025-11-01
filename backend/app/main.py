@@ -15,6 +15,9 @@ def get_db():
 
 app = FastAPI()
 
+app.include_router(chat.router, prefix="/api", tags=["chat"])
+
+
 @app.get("/")
 async def index():
     return "Hello, World!"
