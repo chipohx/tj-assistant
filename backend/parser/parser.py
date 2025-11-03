@@ -8,8 +8,13 @@ current_file = Path(__file__)
 current_dir = current_file.parent
 categories_path = current_dir / "categories"
 
+
 def parse_article(url: str) -> dict:
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        return f"Error: {e}"
 
     if response.status_code != 200:
        return f"Status code: {response.status_code}"

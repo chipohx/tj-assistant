@@ -6,22 +6,28 @@ services:
     depends_on:
       - postgres
     environment:
+      - DB_USER=user
+      - DB_PASS=pass
+      - DB_NAME=maindb
+      - DB_PORT=5432
       - DB_HOST=postgres
     volumes:
-      - .:/project
+      - ./app:/project/app
+      - ./migrations:/project/migrations
+      - ./alembic.ini:/project/alembic.ini
 
   postgres:
     image: postgres:latest
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=maindb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
     volumes:
       - postgres_data:/var/lib/postgresql
 volumes:
-  postgres_data:  
+  postgres_data:
 
 
 
