@@ -8,11 +8,45 @@ import selenium_loader
 current_dir = Path(__file__).parent
 categories_path = current_dir / "categories"
 
+driver_instance = None
 
-def parse_article(url: str) -> dict:
+
+def get_driver():
+    """Эта функция открывает driver
+
+    Если driver уже был открыт
+    Он не откроется снова
+    """
+
+    global driver_instance
+    if driver_instance is None:
+        driver_instance = selenium_loader.create_driver()
+    return driver_instance
+
+
+def close_driver():
+    """Эта функция закрывает driver"""
+
+    global driver_instance
+    if driver_instance:
+        try:
+            driver_instance.quit()
+        except Exception as e:
+            print(f"Ошибка: {e}")
+        driver_instance = None
+
+
+def parse_article(url: str, is_category_parsing: bool = False) -> dict:
+    """Эта функция парсит одну статью
+
+    На вход принимает url статьи
+    В случае прямого вызова открывает
+    и закрывает driver заново
+    """
+
     # Получаем html контент
 
-    driver = selenium_loader.create_driver()
+    driver = get_driver()
 
     try:
         """if not selenium_loader.load_cookies_from_file(
@@ -98,20 +132,18 @@ def parse_article(url: str) -> dict:
 
         article_data["text"] = text_by_headers
 
+        if not is_category_parsing:
+            close_driver()
         return article_data
 
     except Exception as e:
         print(f"Ошибка при парсинге {url}: {e}")
         return {}
-    finally:
-        print("Закрываю браузер для этой статьи...")
-        try:
-            driver.quit()
-        except Exception as e:
-            print(f"Возникла ошибка при закрытии браузера: {e}")
 
 
 def get_category_urls(category_filename: str) -> str:
+    """Эта функция возвращает все url из полученного на вход xml файла"""
+
     file_path = categories_path / category_filename
 
     with open(file_path, "r", encoding="utf-8") as file:
@@ -129,6 +161,12 @@ def get_category_urls(category_filename: str) -> str:
 
 
 def parse_category(category_filename: str, articles_to_parse: int) -> list:
+    """Эта функция парсит статьи из категории
+
+    category_filename - содержит имя xml файла содержащего sitemap категории
+    articles_to_parse - количество статей из категории которые нужно запарсить
+    """
+
     category_data = []
     category_urls = get_category_urls(category_filename)
 
@@ -138,7 +176,7 @@ def parse_category(category_filename: str, articles_to_parse: int) -> list:
     """with open("output.txt", "w", encoding="utf-8") as f:
         for article_url in urls_to_parse:
             try:
-                article_data = parse_article(article_url)
+                article_data = parse_article(article_url, True)
                 # Проверка что article_data не пустой и содержит текст
                 if (
                     article_data
@@ -165,17 +203,20 @@ def parse_category(category_filename: str, articles_to_parse: int) -> list:
 
     for article_url in urls_to_parse:
         try:
-            article_data = parse_article(article_url)
+            article_data = parse_article(article_url, True)
             category_data.append(article_data)
             print(f"Успешный парсинг статьи: {article_url}")
         except Exception as e:
             print(f"Ошибка при парсинге {article_url}: {e}")
             continue
+    close_driver()
     return category_data
 
 
 def get_category_file_names() -> list:
-    return os.listdir(categories_path)
+    """Возвращает название всех xml файлов папке категорий"""
+
+    return [f for f in os.listdir(categories_path) if f.endswith(".xml")]
 
 
-print(parse_category(get_category_file_names()[0], 1))
+print(parse_category(get_category_file_names()[0], 3))
