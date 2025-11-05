@@ -77,7 +77,7 @@ def parse_article(url: str, is_category_parsing: bool = False) -> dict:
 
         # Парсим страницы авторов
         for author in soup.find_all("div", class_="_author_ab553_6"):
-            author_page = author.find("a")["href"]
+            author_page = author.find("a")["href"]  
             authors.append(author_page)
         # Добавляем в словарь
         article_data["authors"] = authors
@@ -96,7 +96,7 @@ def parse_article(url: str, is_category_parsing: bool = False) -> dict:
         # Парсим все блоки div в main_content
         for element in found_elements:
 
-            """# Пропускаем авторов
+            # Пропускаем авторов
             if element.find_all({"class": "_author_ab553_6"}):
                 print(f"Пропускаю div, содержащий автора: {element.get_text()[:50]}...")
                 continue
@@ -105,7 +105,7 @@ def parse_article(url: str, is_category_parsing: bool = False) -> dict:
                 print(
                     f"Пропускаю div, содержащий ссылку на статью: {element.get_text()[:50]}..."
                 )
-                continue"""
+                continue
 
             # После каждого нового заголовка записываем и сбрасываем накопленный текст
             if len(element.find_all("h2")) != 0:
@@ -173,7 +173,7 @@ def parse_category(category_filename: str, articles_to_parse: int) -> list:
     # Проверка что не хотим распарсить статей больше чем есть
     urls_to_parse = category_urls[:articles_to_parse]
 
-    """with open("output.txt", "w", encoding="utf-8") as f:
+    with open("output.txt", "w", encoding="utf-8") as f:
         for article_url in urls_to_parse:
             try:
                 article_data = parse_article(article_url, True)
@@ -199,18 +199,18 @@ def parse_category(category_filename: str, articles_to_parse: int) -> list:
                 print(f"Ошибка при парсинге {article_url}: {e}")
                 continue
     print("Все спарсенные статьи записаны в output.txt")
-    return category_data"""
-
-    for article_url in urls_to_parse:
-        try:
-            article_data = parse_article(article_url, True)
-            category_data.append(article_data)
-            print(f"Успешный парсинг статьи: {article_url}")
-        except Exception as e:
-            print(f"Ошибка при парсинге {article_url}: {e}")
-            continue
-    close_driver()
     return category_data
+
+    # for article_url in urls_to_parse:
+    #     try:
+    #         article_data = parse_article(article_url, True)
+    #         category_data.append(article_data)
+    #         print(f"Успешный парсинг статьи: {article_url}")
+    #     except Exception as e:
+    #         print(f"Ошибка при парсинге {article_url}: {e}")
+    #         continue
+    # close_driver()
+    # return category_data
 
 
 def get_category_file_names() -> list:
@@ -219,4 +219,4 @@ def get_category_file_names() -> list:
     return [f for f in os.listdir(categories_path) if f.endswith(".xml")]
 
 
-print(parse_category(get_category_file_names()[0], 3))
+print(parse_category(get_category_file_names()[2], 5))
