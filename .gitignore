@@ -8,6 +8,8 @@ __pycache__/
 # C extensions
 *.so
 
+backend\parser\output.txt
+
 # Distribution / packaging
 .Python
 build/
