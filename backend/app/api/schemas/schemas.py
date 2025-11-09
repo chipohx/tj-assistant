@@ -17,11 +17,15 @@ class ChatResponse(BaseModel):
 
 class UserSchema(BaseModel):
     username: str
-    email: str | None = None
 
 
 class UserDBSchema(UserSchema):
     hashed_password: str
+
+
+class NewUser(BaseModel):
+    username: str
+    plain_password: str
 
 
 class SessionResponse(BaseModel):
