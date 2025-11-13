@@ -32,7 +32,7 @@ def _load_model():
             filename=MODEL_FILENAME,
             set_prefix_caching=True,
             n_threads=1,
-            n_ctx=1024,
+            n_ctx=2048,
             verbose=False,
             token=os.getenv("HF_TOKEN")
         )

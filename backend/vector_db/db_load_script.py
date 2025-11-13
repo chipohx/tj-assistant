@@ -6,6 +6,8 @@ import json
 import logging
 from pathlib import Path
 import chromadb
+from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 current_dir = Path(__file__).parent.resolve()
@@ -14,6 +16,7 @@ INPUT_JSON_FILE = current_dir / "articles.json"
 CHROMA_DB_PATH = current_dir / "chroma_db"
 COLLECTION_NAME = "articles_collection"
 BATCH_SIZE = 128
+E5_MODEL_NAME = "intfloat/multilingual-e5-large-instruct"
 
 
 def main():
@@ -68,8 +71,13 @@ def main():
         return
 
     try:
+        embedding_function = SentenceTransformerEmbeddingFunction(model_name=E5_MODEL_NAME)
+
         client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
-        collection = client.get_or_create_collection(name=COLLECTION_NAME)
+        collection = client.get_or_create_collection(
+            name=COLLECTION_NAME,
+            embedding_function=embedding_function,
+        )
 
         # Итерируемся по индексам для создания пакетов (батчей)
         for i in range(0, len(ids_list), BATCH_SIZE):
