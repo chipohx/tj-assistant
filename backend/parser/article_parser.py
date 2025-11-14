@@ -168,6 +168,17 @@ def parse_category(category_filename: str, articles_to_parse: int) -> list:
     print("Все спарсенные статьи записаны в output.txt")
     return category_data
 
+    # for article_url in urls_to_parse:
+    #     try:
+    #         article_data = parse_article(article_url, True)
+    #         category_data.append(article_data)
+    #         print(f"Успешный парсинг статьи: {article_url}")
+    #     except Exception as e:
+    #         print(f"Ошибка при парсинге {article_url}: {e}")
+    #         continue
+    # close_driver()
+    # return category_data
+
 
 def get_category_file_names() -> list:
     """Возвращает название всех xml файлов папке категорий"""
