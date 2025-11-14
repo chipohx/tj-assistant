@@ -38,3 +38,12 @@ class SessionResponse(BaseModel):
 class SessionListResponse(BaseModel):
     sessions: List[SessionResponse]
     total: int
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None

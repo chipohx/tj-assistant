@@ -3,7 +3,7 @@ import uuid
 from enum import Enum as PyEnum
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import DateTime, String, ForeignKey, Enum, func
+from sqlalchemy import DateTime, String, ForeignKey, Enum, Boolean, func
 from sqlalchemy.dialects.postgresql import UUID
 
 
@@ -23,6 +23,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
     created: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    activated: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Chat(Base):
