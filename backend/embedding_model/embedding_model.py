@@ -1,4 +1,5 @@
 """
+Веткторизующая модель
 """
 from fastapi import FastAPI
 from sentence_transformers import SentenceTransformer
@@ -17,6 +18,9 @@ logging.info(f"Модель для встраиваний '{EMBEDDING_MODEL_NAME
 
 @app.post("/get")
 async def encode(message: str):
+    """
+    Преобразует сообщение юзера в вектор
+    """
     message_embedding = embedding_model.encode(message).tolist()
     return message_embedding
 

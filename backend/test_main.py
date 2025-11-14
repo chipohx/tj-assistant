@@ -5,7 +5,7 @@ EMBEDDING_MODEL_URL = 'http://localhost:5003/get'
 VECTOR_DB_URL = 'http://localhost:5004/get_context'
 LLM_URL = 'http://localhost:5005/generate-question'
 
-QUERY = 'Музеи санкт-петербурга'
+QUERY = 'Как приготовить сочную свиную корейку?'
 
 embedding_response = requests.post(EMBEDDING_MODEL_URL, params={'message': QUERY})
 vectorized_query = embedding_response.json()

@@ -1,3 +1,6 @@
+"""
+Модуль генерации вопросов и ответов
+"""
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse, Response
@@ -18,11 +21,16 @@ app = FastAPI(title="ллм")
 # Флаг готовности модели: False, пока загрузка не завершилась
 is_ready = False
 
+
 class GenerationRequest(BaseModel):
     context: str
     user_message: str
 
-def _load_model():
+
+def _load_model() -> None:
+    """
+    Загружает модель
+    """
     global llm, is_ready
     logging.info("[question_model] loading model")
     try:
@@ -52,13 +60,17 @@ logging.info(f"[question_model] model loaded")
 async def health_check():
     logging.info(f"[question_model] health check")
     if is_ready:
-        return {"status": "ok"}
+        return JSONResponse(status_code=200, content={"status": "ok"})
     # 503 — сервис ещё не готов
     return JSONResponse(status_code=503, content={"status": "loading"})
 
 
 @app.post("/generate-question")
-async def generate_question(request_data: GenerationRequest):
+async def generate_question(request_data: GenerationRequest) -> Response:
+    """
+    Генерирует ответ(вопрос), исходя из вопроса юзера
+    и контекста из векторной БД
+    """
     logging.info(f"[question_model] generate question")
 
     SYSTEM_PROMPT = """Ты — полезный ассистент Т-Ж. Твоя задача — ответить на вопрос пользователя,
@@ -68,6 +80,9 @@ async def generate_question(request_data: GenerationRequest):
     - [ссылка2]"""
 
     def build_messages() -> list[dict]:
+        """
+
+        """
         return [
             {"role": "system", "content": SYSTEM_PROMPT},
             {

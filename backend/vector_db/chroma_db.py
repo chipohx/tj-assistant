@@ -1,3 +1,6 @@
+"""
+Векторная база данных
+"""
 import logging
 from pathlib import Path
 import chromadb
@@ -18,7 +21,18 @@ collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
 
 @app.get("/get_context")
-async def get_context(message_embedding: str, top_k: int = 5) -> Response:
+async def get_context(message_embedding: str, top_k: int = 3) -> Response:
+    """
+    Ищет наиболее релевантные документы для вопроса
+    и формирует контекст
+    :param message_embedding: вектор вопроса юзера,
+    :param top_k: количество возвращаемых документов
+
+    returns: json response: {
+                            document: document,
+                            source_url: source_url,
+                            }
+    """
     logging.info(f"Получен запрос на поиск контекста. Запрашиваемое количество документов (top_k): {top_k}")
     try:
         embedding_list = json.loads(message_embedding)
