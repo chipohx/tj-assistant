@@ -1,11 +1,13 @@
-import jwt
+import jwt, os
+from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
 from pwdlib import PasswordHash
-from pydantic import BaseModel
 
-SECRET_KEY = "c5a21c5337abedebeffc85f52cf399579224637567d8121095f58a63cc27f285"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 360
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 password_hash = PasswordHash.recommended()
 
@@ -20,6 +22,9 @@ def get_password_hash(password: str) -> str:
 
 
 def create_token(data: dict):
+    if not SECRET_KEY:
+        raise Exception("SECRET_KEY not specified in .env")
+
     expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = data.copy()
     if expires_delta:
@@ -31,7 +36,10 @@ def create_token(data: dict):
     return encoded_jwt
 
 
-def decode_access_token(token: str):
+def decode_token(token: str):
+    if not SECRET_KEY:
+        raise Exception("SECRET_KEY not specified in .env")
+
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     username = payload.get("sub")
     return username
