@@ -1,35 +1,104 @@
 services:
-  backend:
-    build: .
+  embedding_model:
+    build:
+      context: ./embedding_model
+      dockerfile: Dockerfile
+    container_name: embedding_model_service
+    ports:
+      - "5003:5003"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./embedding_model:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5003/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+  vector_db:
+    build:
+      context: ./vector_db
+      dockerfile: Dockerfile
+    container_name: vector_db_service
+    ports:
+      - "5004:5004"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CHROMA_DB_PATH=/app/chroma_db
+      - EMBEDDING_MODEL_NAME=intfloat/multilingual-e5-large-instruct
+    volumes:
+      - ./vector_db:/app
+      - ./vector_db/chroma_db:/app/chroma_db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5004/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      embedding_model:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+  llm:
+    build:
+      context: ./llm
+      dockerfile: Dockerfile
+    container_name: llm_service
+    ports:
+      - "5005:5005"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HF_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - ./llm:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5005/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    depends_on:
+      vector_db:
+        condition: service_healthy
+      embedding_model:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+  main:
+    build:
+      context: ./main
+      dockerfile: Dockerfile
+    container_name: main_service
     ports:
       - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - EMBEDDING_MODEL_URL=http://embedding_model:5003
+      - VECTOR_DB_URL=http://vector_db:5004
+      - LLM_URL=http://llm:5005
+    volumes:
+      - ./main:/app
     depends_on:
-      - postgres
-    environment:
-      - DB_USER=user
-      - DB_PASS=pass
-      - DB_NAME=maindb
-      - DB_PORT=5432
-      - DB_HOST=postgres
-    volumes:
-      - ./app:/project/app
-      - ./migrations:/project/migrations
-      - ./alembic.ini:/project/alembic.ini
+      embedding_model:
+        condition: service_healthy
+      vector_db:
+        condition: service_healthy
+      llm:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
 
-  postgres:
-    image: postgres:latest
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=maindb
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-    volumes:
-      - postgres_data:/var/lib/postgresql
-volumes:
-  postgres_data:
-
-
-
-
-#- DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@{DB_HOST}:5432/${DB_NAME}
+networks:
+  tj-assistant-network:
+    driver: bridge
