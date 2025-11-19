@@ -4,7 +4,6 @@ from urllib.parse import quote_plus
 
 
 class Settings(BaseSettings):
-    # DATABASE_URL: str
     DB_USER: str = "user"
     DB_PASS: str = "pass"
     DB_NAME: str = "maindb"
