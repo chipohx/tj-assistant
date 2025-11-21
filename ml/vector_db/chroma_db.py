@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import chromadb
 from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse
 import json
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,6 +19,26 @@ COLLECTION_NAME = "articles_collection"
 
 client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 collection = client.get_or_create_collection(name=COLLECTION_NAME)
+
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint для проверки готовности сервиса
+    """
+    try:
+        # Проверяем, что коллекция доступна
+        count = collection.count()
+        return JSONResponse(
+            status_code=200,
+            content={"status": "ok", "collection_count": count}
+        )
+    except Exception as e:
+        logging.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "message": str(e)}
+        )
 
 
 @app.get("/get_context")
