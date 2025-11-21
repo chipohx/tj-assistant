@@ -163,8 +163,8 @@ async def get_response_from_llm(request: QueryRequest):
         logger.info(f"LLM generation time: {llm_end:.2f}s")
 
         # Шаг 5: Обработка ответа от LLM
-        if "choices" in llm_output and len(llm_output["choices"]) > 0:
-            response_content = llm_output["choices"][0]["message"]["content"]
+        if "generated_text" in llm_output:
+            response_content = llm_output["generated_text"]
             return JSONResponse(
                 status_code=200,
                 content={
@@ -181,7 +181,7 @@ async def get_response_from_llm(request: QueryRequest):
             logger.error(f"LLM response format error: {llm_output}")
             raise HTTPException(
                 status_code=500,
-                detail="Некорректный формат ответа от LLM"
+                detail="Некорректный формат ответа от LLM: отсутствует ключ 'generated_text'"
             )
 
     except requests.exceptions.Timeout as e:

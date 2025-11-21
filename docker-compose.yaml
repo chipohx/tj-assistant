@@ -1,0 +1,136 @@
+services:
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DB_USER=user
+      - DB_PASS=pass
+      - DB_NAME=maindb
+      - DB_PORT=5432
+      - DB_HOST=postgres
+    volumes:
+      - ./backend/app:/project/app
+      - ./backend/migrations:/project/migrations
+      - ./backend/alembic.ini:/project/alembic.ini
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=maindb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  embedding_model:
+    build:
+      context: ml/embedding_model
+      dockerfile: Dockerfile
+    container_name: embedding_model_service
+    ports:
+      - "5003:5003"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./ml/embedding_model:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5003/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+  vector_db:
+    build:
+      context: ml/vector_db
+      dockerfile: Dockerfile
+    container_name: vector_db_service
+    ports:
+      - "5004:5004"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CHROMA_DB_PATH=/app/chroma_db
+      - EMBEDDING_MODEL_NAME=intfloat/multilingual-e5-large-instruct
+    volumes:
+      - ./ml/vector_db:/app
+      - ./ml/vector_db/chroma_db:/app/chroma_db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5004/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      embedding_model:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+  llm:
+    build:
+      context: ml/llm
+      dockerfile: Dockerfile
+    container_name: llm_service
+    ports:
+      - "5005:5005"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./ml/llm:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5005/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    depends_on:
+      vector_db:
+        condition: service_healthy
+      embedding_model:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+  main:
+    build:
+      context: ml/main
+      dockerfile: Dockerfile
+    container_name: main_service
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - EMBEDDING_MODEL_URL=http://embedding_model:5003
+      - VECTOR_DB_URL=http://vector_db:5004
+      - LLM_URL=http://llm:5005
+    volumes:
+      - ./ml/main:/app
+    depends_on:
+      embedding_model:
+        condition: service_healthy
+      vector_db:
+        condition: service_healthy
+      llm:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tj-assistant-network
+
+networks:
+  tj-assistant-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

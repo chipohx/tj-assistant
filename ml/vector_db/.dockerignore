@@ -20,5 +20,5 @@ htmlcov
 *.swp
 *.swo
 *~
-test_*.py
+test_retriever.py
 

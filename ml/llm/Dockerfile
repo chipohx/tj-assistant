@@ -2,15 +2,6 @@
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
-
-# Установка build-зависимостей
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
 # Копирование requirements и установка зависимостей
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
@@ -19,11 +10,6 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 FROM python:3.12-slim
 
 WORKDIR /app
-
-# Установка runtime зависимостей для llama-cpp-python
-RUN apt-get update && apt-get install -y \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
 
 # Копирование установленных пакетов из builder
 COPY --from=builder /root/.local /root/.local
