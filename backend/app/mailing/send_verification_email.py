@@ -37,11 +37,9 @@ async def send_verification_email(email: str):
     data["verification_url_text"] = verification_url_text
     html_content = template.format(**data)
 
-    try:
-        await send_email(
-            recipient_email=email,
-            subject=email_subject,
-            html_content=html_content,
-        )
-    except Exception as e:
-        print(f"Email sending error: {e}")
+    await send_email(
+        recipient_email=email,
+        subject=email_subject,
+        html_content=html_content,
+    )
+   
