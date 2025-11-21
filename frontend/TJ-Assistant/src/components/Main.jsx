@@ -1,0 +1,188 @@
+import React, { useState, useRef, useEffect } from "react";
+import robotIcon from "../assets/images/robot.png";
+import profileIcon from "../assets/images/account.png";
+import sendButton from "../assets/images/send-btn.png";
+import copyButton from "../assets/images/copy-btn.png";
+
+export default function Main() {
+    const [message, setMessage] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [copiedMessageId, setCopiedMessageId] = useState(null);
+    const textareaRef = useRef(null);
+
+    const adjustTextareaHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            const maxHeight = 120;
+            const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+            textarea.style.height = newHeight + 'px';
+        }
+    };
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [message]);
+
+    const handleSendMessage = () => {
+        if (message.trim() === "") return;
+
+        const userMessage = {
+            id: Date.now(),
+            type: "user",
+            text: message
+        };
+
+        const assistantMessage = {
+            id: Date.now() + 1,
+            type: "assistant",
+            text: message
+        };
+
+        setMessages(prev => [...prev, userMessage, assistantMessage]);
+        setMessage("");
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = '40px';
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+        }
+    };
+
+    const handleAssistantButtonClick = (buttonText) => {
+        setMessage(buttonText);
+        setTimeout(() => {
+            handleSendMessage();
+        }, 100);
+    };
+
+    const handleCopyText = (text, messageId) => {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                setCopiedMessageId(messageId);
+                // Скрываем подсказку через 2 секунды
+                setTimeout(() => {
+                    setCopiedMessageId(null);
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка при копировании текста: ', err);
+            });
+    };
+
+    return (
+        <main className="main">
+            <section className="main-content">
+                <div className="assistant-message welcome-message">
+                    <img className="robot-icon" src={robotIcon} alt="robot icon" />
+                    <p className="assistant-message-text">
+                        Привет! Я Ассистент Т-Ж — AI-эксперт по статьям.
+                    </p>
+                    <p className="assistant-message-text1">
+                        Спросите о финансах, инвестициях, правах, путешествиях или любой другой теме, и я найду для вас ответ в статьях Т-Ж.
+                    </p>
+                    <p className="assistant-message-text2">Попробуйте задать вопрос:</p>
+                    <div className="assistant-message-buttons">
+                        <button
+                            className="assistant-message-button"
+                            onClick={() => handleAssistantButtonClick("Как взять ипотеку?")}
+                        >
+                            Как взять ипотеку?
+                        </button>
+                        <button
+                            className="assistant-message-button"
+                            onClick={() => handleAssistantButtonClick("Налоги для самозанятых")}
+                        >
+                            Налоги для самозанятых
+                        </button>
+                        <button
+                            className="assistant-message-button"
+                            onClick={() => handleAssistantButtonClick("Как экономить на путешествиях?")}
+                        >
+                            Как экономить на путешествиях?
+                        </button>
+                        <button
+                            className="assistant-message-button"
+                            onClick={() => handleAssistantButtonClick("Страхование автомобиля")}
+                        >
+                            Страхование автомобиля
+                        </button>
+                    </div>
+                </div>
+                <div className="messages-container">
+                    {messages.map((msg) => (
+                        <div
+                            key={msg.id}
+                            className={`message-wrapper ${msg.type}-message-wrapper`}
+                        >
+                            {msg.type === "user" ? (
+                                <div className="user-message">
+                                    <p className="user-message-text">
+                                        {msg.text}
+                                    </p>
+                                    <img
+                                        className="profile-icon profile-message-icon"
+                                        src={profileIcon}
+                                        alt="profile icon"
+                                    />
+                                    <img
+                                        className="copy-icon"
+                                        src={copyButton}
+                                        alt="copy button"
+                                        onClick={() => handleCopyText(msg.text, msg.id)}
+                                    />
+                                    {copiedMessageId === msg.id && (
+                                        <div className="copy-tooltip">Скопировано</div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="assistant-message dynamic-message">
+                                    <img className="robot-icon" src={robotIcon} alt="robot icon" />
+                                    <p className="assistant-message-text">
+                                        {msg.text}
+                                    </p>
+                                    <img
+                                        className="copy-assistant-icon"
+                                        src={copyButton}
+                                        alt="copy button"
+                                        onClick={() => handleCopyText(msg.text, msg.id)}
+                                    />
+                                    {/* Подсказка "Скопировано" */}
+                                    {copiedMessageId === msg.id && (
+                                        <div className="copy-tooltip">Скопировано</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <section className="input-message-field">
+                <textarea
+                    ref={textareaRef}
+                    className="message-field"
+                    placeholder="Задайте вопрос о финансах, законах, путешествиях..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    rows={1}
+                />
+                <button
+                    className="send-message-button"
+                    onClick={handleSendMessage}
+                    style={{
+                        backgroundImage: `url(${sendButton})`,
+                        backgroundSize: "contain",
+                        backgroundRepeat: "no-repeat",
+                    }}
+                ></button>
+            </section>
+        </main>
+    );
+}
