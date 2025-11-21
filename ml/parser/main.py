@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 
 from article_parser import get_category_file_names
-from backend.parser.article_parser import prepare_chunks_from_category
+from ml.parser.article_parser import prepare_chunks_from_category
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 current_dir = Path(__file__).parent.resolve()

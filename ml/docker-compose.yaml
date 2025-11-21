@@ -1,7 +1,7 @@
 services:
   embedding_model:
     build:
-      context: ./embedding_model
+      context: embedding_model
       dockerfile: Dockerfile
     container_name: embedding_model_service
     ports:
@@ -22,7 +22,7 @@ services:
 
   vector_db:
     build:
-      context: ./vector_db
+      context: vector_db
       dockerfile: Dockerfile
     container_name: vector_db_service
     ports:
@@ -49,14 +49,13 @@ services:
 
   llm:
     build:
-      context: ./llm
+      context: llm
       dockerfile: Dockerfile
     container_name: llm_service
     ports:
       - "5005:5005"
     environment:
       - PYTHONUNBUFFERED=1
-      - HF_TOKEN=${HF_TOKEN:-}
     volumes:
       - ./llm:/app
     healthcheck:
@@ -76,7 +75,7 @@ services:
 
   main:
     build:
-      context: ./main
+      context: main
       dockerfile: Dockerfile
     container_name: main_service
     ports:
