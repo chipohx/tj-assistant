@@ -4,6 +4,7 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from sentence_transformers import SentenceTransformer
+import torch
 import logging
 from config import (
     EMBEDDING_MODEL_NAME,
@@ -13,7 +14,24 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 app = FastAPI(title='эмбеддинг модель для запросов')
 
+logging.info(f"Загрузка модели для встраиваний '{EMBEDDING_MODEL_NAME}'...")
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME, device='cpu')
+
+# Применяем динамическое квантование для ускорения и уменьшения памяти
+if hasattr(embedding_model, '_modules') or hasattr(embedding_model[0], 'auto_model'):
+    try:
+        # Получаем transformer модель из sentence_transformers
+        if hasattr(embedding_model, '_modules'):
+            for module in embedding_model._modules.values():
+                if hasattr(module, 'auto_model'):
+                    module.auto_model = torch.quantization.quantize_dynamic(
+                        module.auto_model, {torch.nn.Linear}, dtype=torch.qint8
+                    )
+                    logging.info("Модель квантована (dynamic quantization)")
+                    break
+    except Exception as e:
+        logging.warning(f"Не удалось квантовать модель: {e}. Продолжаем без квантования.")
+
 logging.info(f"Модель для встраиваний '{EMBEDDING_MODEL_NAME}' успешно загружена.")
 
 

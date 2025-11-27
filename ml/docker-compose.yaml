@@ -1,92 +1,116 @@
+# ===== ML Services Only =====
+# Для запуска всего проекта (backend + ml) используй ../docker-compose.yaml из корня
+# Этот compose только для локальной разработки ml сервисов
+
+# ===== anchors =====
+x-common: &common
+  build: &common-build
+    context: .
+    dockerfile: config/.dockerfile
+  environment:
+    PYTHONUNBUFFERED: "1"
+  restart: unless-stopped
+  networks: [ml-network]
+  working_dir: /app
+
+x-healthcheck-fast: &healthcheck-fast
+  test: ["CMD-SHELL", "if [ -f /tmp/healthy ]; then exit 0; else curl -f http://localhost:$${PORT}/health && touch /tmp/healthy; fi"]
+  interval: 2s
+  timeout: 10s
+  retries: 10000
+
+# ===== networks/volumes =====
+networks:
+  ml-network:
+    driver: bridge
+
+volumes:
+  hf_cache:
+
 services:
+  # ---------- embedding_model ----------
   embedding_model:
+    <<: *common
     build:
-      context: embedding_model
-      dockerfile: Dockerfile
+      <<: *common-build
+      target: embedding_model
     container_name: embedding_model_service
-    ports:
-      - "5003:5003"
-    environment:
-      - PYTHONUNBUFFERED=1
+    command: uvicorn embedding_model:app --reload --host 0.0.0.0 --port 5003
+    ports: ["5003:5003"]
     volumes:
       - ./embedding_model:/app
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5003/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - tj-assistant-network
-
-  vector_db:
-    build:
-      context: vector_db
-      dockerfile: Dockerfile
-    container_name: vector_db_service
-    ports:
-      - "5004:5004"
+      - hf_cache:/root/.cache/huggingface
     environment:
-      - PYTHONUNBUFFERED=1
-      - CHROMA_DB_PATH=/app/chroma_db
-      - EMBEDDING_MODEL_NAME=intfloat/multilingual-e5-large-instruct
+      PYTHONUNBUFFERED: "1"
+      PORT: "5003"
+    healthcheck:
+      <<: *healthcheck-fast
+      start_period: 120s
+
+  # ---------- vector_db ----------
+  vector_db:
+    <<: *common
+    build:
+      <<: *common-build
+      target: vector_db
+    container_name: vector_db_service
+    command: uvicorn chroma_db:app --reload --host 0.0.0.0 --port 5004
+    ports: ["5004:5004"]
     volumes:
       - ./vector_db:/app
       - ./vector_db/chroma_db:/app/chroma_db
+    environment:
+      PYTHONUNBUFFERED: "1"
+      CHROMA_DB_PATH: /app/chroma_db
+      EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large-instruct
+      PORT: "5004"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5004/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      <<: *healthcheck-fast
       start_period: 10s
     depends_on:
       embedding_model:
         condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - tj-assistant-network
 
+  # ---------- llm ----------
   llm:
+    <<: *common
     build:
-      context: llm
-      dockerfile: Dockerfile
+      <<: *common-build
+      target: llm
     container_name: llm_service
-    ports:
-      - "5005:5005"
-    environment:
-      - PYTHONUNBUFFERED=1
+    command: uvicorn llm_local:app --reload --host 0.0.0.0 --port 5005
+    ports: ["5005:5005"]
     volumes:
       - ./llm:/app
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PORT: "5005"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5005/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 300s
+      <<: *healthcheck-fast
+      start_period: 120s
     depends_on:
       vector_db:
         condition: service_healthy
       embedding_model:
         condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - tj-assistant-network
 
+  # ---------- main ----------
   main:
+    <<: *common
     build:
-      context: main
-      dockerfile: Dockerfile
+      <<: *common-build
+      target: main
     container_name: main_service
-    ports:
-      - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - EMBEDDING_MODEL_URL=http://embedding_model:5003
-      - VECTOR_DB_URL=http://vector_db:5004
-      - LLM_URL=http://llm:5005
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8001
+    ports: ["8001:8001"]
     volumes:
       - ./main:/app
+    environment:
+      PYTHONUNBUFFERED: "1"
+      EMBEDDING_MODEL_URL: http://embedding_model:5003
+      VECTOR_DB_URL: http://vector_db:5004
+      LLM_URL: http://llm:5005
     depends_on:
       embedding_model:
         condition: service_healthy
@@ -94,10 +118,11 @@ services:
         condition: service_healthy
       llm:
         condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - tj-assistant-network
 
-networks:
-  tj-assistant-network:
-    driver: bridge
+  # ---------- notifier ----------
+  notifier:
+    image: alpine
+    depends_on:
+      llm:
+        condition: service_healthy
+    command: ["sh", "-c", "echo '✅ Все ML сервисы готовы'"]
