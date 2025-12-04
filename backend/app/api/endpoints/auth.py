@@ -66,9 +66,6 @@ async def register(
     if db_user:
         if db_user.activated:
             raise HTTPException(status_code=409, detail="Account already exists")
-        else:
-            await send_verification_email(form_data.username)
-            return {"detail": "Verification email resent"}
 
     new_user = User(
         email=form_data.username, password=get_password_hash(form_data.password)
