@@ -14,6 +14,7 @@ from app.api.schemas.schemas import (
     ChatResponse,
     SessionListResponse,
     UserSchema,
+    NewChat,
 )
 
 router = APIRouter()
@@ -30,11 +31,8 @@ def create_message_in_db(db: Session, content: str, role: Role, chat_id: UUID) -
         print(f"Error: {e}")
 
 
-def create_chat(db: Session, title: str, username: str):
+def create_chat(db: Session, title: str, user: User):
     try:
-        user = db.query(User).filter(User.username == username).first()
-        if not user:
-            raise HTTPException(status_code=400, detail="User not found")
         new_chat = Chat(title=title, user_id=user.id)
         db.add(new_chat)
         db.commit()
@@ -47,26 +45,38 @@ def create_chat(db: Session, title: str, username: str):
 
 @router.post("/new-chat")
 async def new_chat(
-    username: Annotated[UserSchema, Depends(get_current_active_user)],
+    user: Annotated[UserSchema, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
-):
-    create_chat(db, title="Новый чат", username=username)
+) -> NewChat:
+    chat_id = create_chat(db, title="Новый чат", user=user)
+    return NewChat(chat_id=chat_id)
 
 
 @router.post("/chat")
 async def send_message(
     request: ChatRequest,
-    username: Annotated[UserSchema, Depends(get_current_active_user)],
+    user: Annotated[UserSchema, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ) -> ChatResponse:
 
+    chat_created = ""
     if not request.chat_id:
-        chat_created = create_chat(db, request.content[:30], username)
+        chat_created = create_chat(db, request.content[:30], user)
+    chat_id = chat_created if chat_created else request.chat_id
 
-    create_message_in_db(db, request.content, Role.USER, request.chat_id)
+    create_message_in_db(db, request.content, Role.USER, chat_id)
 
     async with httpx.AsyncClient() as client:
         try:
+            health_check = await client.get("http://localhost:8001/health", timeout=5.0)
+
+            if health_check.status_code != 200:
+                print(f"Health check failed: {health_check.status_code}")
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"LLM service health check failed: {health_check.text}",
+                )
+
             response = await client.post(
                 "http://localhost:8001/llm_response",
                 json={"query": request.content},
@@ -87,18 +97,16 @@ async def send_message(
     response_content = response_dict["response"]
 
     if response_content:
-        message_id = create_message_in_db(
-            db, response_content, request.chat_id, Role.SYSTEM
-        )
+        message_id = create_message_in_db(db, response_content, Role.SYSTEM, chat_id)
 
         return ChatResponse(
             message_id=message_id,
             content=response_content,
             timestamp=datetime.now(),
-            chat_created=chat_created,
+            chat_created=chat_id,
         )
     else:
-        return {"detail": "empty response"}
+        raise HTTPException(status_code=502, detail="Empty response from LLM service")
 
 
 # TODO стриминг ответа (WebSocket)

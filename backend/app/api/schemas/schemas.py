@@ -7,6 +7,10 @@ from typing import List
 
 class ChatRequest(BaseModel):
     content: str
+    chat_id: UUID | None = None
+
+
+class NewChat(BaseModel):
     chat_id: UUID
 
 
