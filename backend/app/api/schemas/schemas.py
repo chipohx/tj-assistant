@@ -1,5 +1,5 @@
 from datetime import datetime
-import uuid
+from uuid import UUID
 
 from pydantic import BaseModel
 from typing import List
@@ -7,12 +7,18 @@ from typing import List
 
 class ChatRequest(BaseModel):
     content: str
+    chat_id: UUID | None = None
+
+
+class NewChat(BaseModel):
+    chat_id: UUID
 
 
 class ChatResponse(BaseModel):
     message_id: int
     content: str
     timestamp: datetime
+    chat_created: str
 
 
 class UserSchema(BaseModel):
@@ -29,7 +35,7 @@ class NewUser(BaseModel):
 
 
 class SessionResponse(BaseModel):
-    id: uuid.UUID
+    id: UUID
     title: str
     created: datetime
     updated: datetime
