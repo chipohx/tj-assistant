@@ -15,10 +15,10 @@ class NewChat(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    message_id: int
+    message_id: UUID
     content: str
     timestamp: datetime
-    chat_created: str
+    chat_created: UUID
 
 
 class UserSchema(BaseModel):

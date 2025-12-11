@@ -2,6 +2,7 @@ from typing import Annotated
 from datetime import datetime
 from uuid import UUID
 import httpx
+import requests
 
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
@@ -55,11 +56,10 @@ async def new_chat(
 @router.post("/chat")
 async def send_message(
     request: ChatRequest,
-    user: Annotated[UserSchema, Depends(get_current_active_user)],
+    user: Annotated[User, Depends(get_current_active_user)],
     db: Session = Depends(get_db),
 ) -> ChatResponse:
 
-    chat_created = ""
     if not request.chat_id:
         chat_created = create_chat(db, request.content[:30], user)
     chat_id = chat_created if chat_created else request.chat_id
@@ -68,7 +68,7 @@ async def send_message(
 
     async with httpx.AsyncClient() as client:
         try:
-            health_check = await client.get("http://localhost:8001/health", timeout=5.0)
+            health_check = await client.get("http://main:8001/health", timeout=30.0)
 
             if health_check.status_code != 200:
                 print(f"Health check failed: {health_check.status_code}")
@@ -78,9 +78,9 @@ async def send_message(
                 )
 
             response = await client.post(
-                "http://localhost:8001/llm_response",
+                "http://main:8001/llm_response",
                 json={"query": request.content},
-                timeout=10.0,
+                timeout=30.0,
             )
         except httpx.RequestError as e:
             print(f"Ошибка сети: {e}")
