@@ -18,7 +18,7 @@ class ChatResponse(BaseModel):
     message_id: UUID
     content: str
     timestamp: datetime
-    chat_created: UUID
+    chat_created: UUID | None
 
 
 class UserSchema(BaseModel):
