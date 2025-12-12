@@ -4,16 +4,18 @@ from uuid import UUID
 import httpx
 import requests
 
-from fastapi import Depends, APIRouter, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import Depends, APIRouter, HTTPException, Query
+from sqlalchemy.orm import Session, defer
+from sqlalchemy import Select
 
 from app.core.user import get_current_active_user, get_user
 from app.models.models import Message, Role, Chat, User
 from app.database.session import get_db
 from app.api.schemas.schemas import (
+    MessageSchema,
     ChatRequest,
     ChatResponse,
-    SessionListResponse,
+    MessagesListResponse,
     UserSchema,
     NewChat,
 )
@@ -80,7 +82,7 @@ async def send_message(
             response = await client.post(
                 "http://main:8001/llm_response",
                 json={"query": request.content},
-                timeout=30.0,
+                timeout=60.0,
             )
         except httpx.RequestError as e:
             print(f"Ошибка сети: {e}")
@@ -109,12 +111,51 @@ async def send_message(
         raise HTTPException(status_code=502, detail="Empty response from LLM service")
 
 
-# TODO стриминг ответа (WebSocket)
+@router.get("/chats")
+async def get_chats(
+    user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+):
+    try:
+        chats = db.scalars(
+            Select(Chat)
+            .filter(Chat.user_id == user.id)
+            .options(defer(Chat.user_id))
+            .order_by(Chat.created.asc())
+        )
+    except Exception as e:
+        print(f"Ошибка при попытке получить чаты: {e}")
+
+    return {"items": [chat.__dict__ for chat in chats]}
 
 
-# TODO Добавить Depends на авторизацию
-@router.get("/chat", response_model=SessionListResponse)
-async def get_chat_sessions(db: Session = Depends(get_db)):
-    """Возвращает все чаты(сессии) пользователя"""
+@router.get("/chat/{chat_id}/messages", response_model=MessagesListResponse)
+async def get_chat_sessions(
+    chat_id: UUID,
+    user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+    limit: int = Query(20, ge=1, le=30),
+    last_id: UUID | None = None,
+):
+    chat = db.scalar(Select(Chat).filter(Chat.id == chat_id))
 
-    return ""
+    if chat.user_id != user.id:
+        raise HTTPException(status_code=401, detail="Access forbidden")
+
+    try:
+        db_messages = db.scalars(
+            Select(Message)
+            .filter(Message.chat_id == chat_id)
+            .order_by(Message.created.asc())
+            .limit(limit)
+        ).all()
+    except Exception as e:
+        print(f"Ошибка при попытке получить сообщения из чата {chat.title}: {e}")
+
+    response_data = {
+        "count": len(db_messages),
+        "next_id": db_messages[-1].id if db_messages else None,
+        "items": [msg.__dict__ for msg in db_messages],
+    }
+
+    return MessagesListResponse[MessageSchema].model_validate(response_data)
