@@ -28,8 +28,6 @@ class NewChat(BaseModel):
 
 
 class MessageSchema(BaseModel):
-    id: UUID
-    chat_id: UUID
     content: str
     created: datetime
     role: Role

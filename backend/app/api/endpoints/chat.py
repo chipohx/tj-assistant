@@ -5,7 +5,7 @@ import httpx
 import requests
 
 from fastapi import Depends, APIRouter, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 from sqlalchemy import Select
 
 from app.core.user import get_current_active_user, get_user
@@ -112,8 +112,21 @@ async def send_message(
 
 
 @router.get("/chats")
-async def get_chats():
-    pass
+async def get_chats(
+    user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+):
+    try:
+        chats = db.scalars(
+            Select(Chat)
+            .filter(Chat.user_id == user.id)
+            .options(defer(Chat.user_id))
+            .order_by(Chat.created.asc())
+        )
+    except Exception as e:
+        print(f"Ошибка при попытке получить чаты: {e}")
+
+    return {"items": [chat.__dict__ for chat in chats]}
 
 
 @router.get("/chat/{chat_id}/messages", response_model=MessagesListResponse)
@@ -129,12 +142,15 @@ async def get_chat_sessions(
     if chat.user_id != user.id:
         raise HTTPException(status_code=401, detail="Access forbidden")
 
-    db_messages = db.scalars(
-        Select(Message)
-        .filter(Message.chat_id == chat_id)
-        .order_by(Message.created.asc())
-        .limit(limit)
-    ).all()
+    try:
+        db_messages = db.scalars(
+            Select(Message)
+            .filter(Message.chat_id == chat_id)
+            .order_by(Message.created.asc())
+            .limit(limit)
+        ).all()
+    except Exception as e:
+        print(f"Ошибка при попытке получить сообщения из чата {chat.title}: {e}")
 
     response_data = {
         "count": len(db_messages),
