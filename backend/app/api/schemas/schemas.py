@@ -1,8 +1,21 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, ConfigDict
+from typing import List, Generic, TypeVar
+from app.models.models import Message, Role
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    count: int
+    next_id: UUID | None = None
+    items: List[T]
+
+
+class MessagesListResponse(PaginatedResponse):
+    pass
 
 
 class ChatRequest(BaseModel):
@@ -12,6 +25,14 @@ class ChatRequest(BaseModel):
 
 class NewChat(BaseModel):
     chat_id: UUID
+
+
+class MessageSchema(BaseModel):
+    id: UUID
+    chat_id: UUID
+    content: str
+    created: datetime
+    role: Role
 
 
 class ChatResponse(BaseModel):
