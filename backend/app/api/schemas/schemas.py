@@ -34,7 +34,6 @@ class MessageSchema(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    message_id: UUID
     content: str
     timestamp: datetime
     chat_created: UUID | None
