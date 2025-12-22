@@ -80,10 +80,17 @@ async def register(
 
 
 @router.post("/auth/request-verify-token", status_code=status.HTTP_202_ACCEPTED)
-async def request_verify_token(email: str = Body(..., embed=True)):
+async def request_verify_token(
+    email: str = Body(..., embed=True), db: Session = Depends(get_db)
+):
     """Заново посылает уведомление для верификации на почту"""
-
-    await send_verification_email(email)
+    db_user = db.query(User).filter(User.email == email).first()
+    if db_user:
+        if not db_user.activated:
+            await send_verification_email(email)
+        else:
+            # TODO Заменить на логгер
+            print("Пользователь уже верифицирован")
     return None
 
 
