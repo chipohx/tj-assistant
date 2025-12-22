@@ -47,7 +47,7 @@ export default function Main() {
                 method: "POST",
                 headers: headers,
                 body: JSON.stringify(requestBody),
-                credentials: "include" // Для передачи cookies, если используется
+                credentials: "include"
             });
 
             if (!response.ok) {
@@ -139,7 +139,6 @@ export default function Main() {
             });
     };
 
-    // Функция для создания нового чата
     const createNewChat = async () => {
         try {
             const token = localStorage.getItem("auth_token");
@@ -169,10 +168,7 @@ export default function Main() {
         }
     };
 
-    // Опционально: загрузка истории сообщений при монтировании компонента
     useEffect(() => {
-        // Если нужно загрузить историю сообщений для текущего чата
-        // можно добавить здесь вызов API для получения сообщений
     }, [currentChatId]);
 
     return (
@@ -253,7 +249,6 @@ export default function Main() {
                             )}
                         </div>
                     ))}
-                    {/* Индикатор загрузки */}
                     {isLoading && (
                         <div className="message-wrapper assistant-message-wrapper">
                             <div className="assistant-message dynamic-message">
