@@ -102,7 +102,6 @@ async def send_message(
         message_id = create_message_in_db(db, response_content, Role.SYSTEM, chat_id)
 
         return ChatResponse(
-            message_id=message_id,
             content=response_content,
             timestamp=datetime.now(),
             chat_created=chat_id,
