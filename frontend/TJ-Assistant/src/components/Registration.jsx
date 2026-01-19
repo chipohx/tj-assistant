@@ -1,227 +1,110 @@
 import React, { useState } from "react";
-import logo from "../assets/images/robot.png";
+import robotIcon from "../assets/images/robot.png";
 
 export default function Registration({ onLogin }) {
-    const [isRegistration, setIsRegistration] = useState(false);
+    const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [passwordRepeat, setPasswordRepeat] = useState("");
-    const [isEmailValid, setIsEmailValid] = useState(true);
-    const [emailError, setEmailError] = useState("");
-    const [passwordError, setPasswordError] = useState("");
-    const [isFormValid, setIsFormValid] = useState(true);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleRegistrationClick = () => {
-        setIsRegistration(true);
-        // Сброс ошибок пароля при переключении
-        setPasswordError("");
-        setIsFormValid(true);
-    };
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
-    const handleSignInClick = () => {
-        setIsRegistration(false);
-        // Сброс ошибок пароля при переключении
-        setPasswordError("");
-        setIsFormValid(true);
-    };
-
-    const handleEmailChange = (e) => {
-        const value = e.target.value;
-        setEmail(value);
-
-        // Проверка email при каждом изменении
-        if (value === "") {
-            setIsEmailValid(true);
-            setEmailError("");
-        } else {
-            const isValid = validateEmail(value);
-            setIsEmailValid(isValid);
-            if (!isValid) {
-                setEmailError("Введите корректный email");
-            } else {
-                setEmailError("");
-            }
-        }
-        validateForm();
-    };
-
-    const handlePasswordChange = (e) => {
-        const value = e.target.value;
-        setPassword(value);
-        if (isRegistration && passwordRepeat && value !== passwordRepeat) {
-            setPasswordError("Пароли не совпадают");
-        } else {
-            setPasswordError("");
-        }
-        validateForm();
-    };
-
-    const handlePasswordRepeatChange = (e) => {
-        const value = e.target.value;
-        setPasswordRepeat(value);
-
-        if (isRegistration) {
-            if (password && value !== password) {
-                setPasswordError("Пароли не совпадают");
-            } else {
-                setPasswordError("");
-            }
-        }
-        validateForm();
-    };
-
-    const validateEmail = (email) => {
-        // Базовый паттерн для проверки email
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
-    };
-
-    const validateForm = () => {
-        if (isRegistration) {
-            const emailValid = validateEmail(email);
-            const passwordsMatch = password === passwordRepeat;
-            const passwordsNotEmpty = password && passwordRepeat;
-
-            setIsFormValid(emailValid && passwordsMatch && passwordsNotEmpty);
-        } else {
-            const emailValid = validateEmail(email);
-            const passwordNotEmpty = password.length > 0;
-
-            setIsFormValid(emailValid && passwordNotEmpty);
-        }
-    };
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError("");
+        setLoading(true);
 
-        // Проверка email перед отправкой
-        if (!validateEmail(email)) {
-            setIsEmailValid(false);
-            setEmailError("Введите корректный email");
-            return;
-        }
+        const endpoint = isLogin ? "/auth/login" : "/auth/register";
+        const formData = new FormData();
+        formData.append("username", email);
+        formData.append("password", password);
 
-        if (isRegistration) {
-            if (password !== passwordRepeat) {
-                setPasswordError("Пароли не совпадают");
-                setIsFormValid(false);
-                return;
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.detail || "Ошибка авторизации");
             }
 
-            if (password.length < 6) {
-                setPasswordError("Пароль должен быть не менее 6 символов");
-                setIsFormValid(false);
-                return;
+            const data = await response.json();
+
+            if (isLogin) {
+                localStorage.setItem("auth_token", data.access_token);
+                onLogin();
+            } else {
+                alert("Регистрация успешна! Проверьте email для подтверждения.");
+                setIsLogin(true);
             }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
-
-        if (!isRegistration && password.length < 6) {
-            setPasswordError("Пароль должен быть не менее 6 символов");
-            setIsFormValid(false);
-            return;
-        }
-
-        // Здесь будет логика отправки формы на сервер
-        console.log("Email:", email);
-        console.log("Password:", password);
-        if (isRegistration) {
-            console.log("Регистрация нового пользователя");
-        } else {
-            console.log("Вход пользователя");
-        }
-
-        setTimeout(() => {
-            onLogin();
-        }, 500);
     };
 
     return (
-        <main className='registration-main'>
-            <form onSubmit={handleSubmit}>
-                <div
-                    id='registration-form'
-                    className={`registration-form ${!isRegistration ? 'no-account' : ''}`}
-                    style={{ height: isRegistration ? '472px' : '384px' }}
-                >
-                    <div id='sign-type' className='sign-type'>
-                        <button
-                            type="button"
-                            id='signin-button'
-                            className={`signin-button ${!isRegistration ? 'active' : ''}`}
-                            onClick={handleSignInClick}
-                        >
-                            Вход
-                        </button>
-                        <button
-                            type="button"
-                            id='reg-button'
-                            className={`reg-button ${isRegistration ? 'active' : ''}`}
-                            onClick={handleRegistrationClick}
-                        >
-                            Регистрация
-                        </button>
+        <div className="auth-container">
+            <div className="auth-card">
+                <img className="auth-logo" src={robotIcon} alt="T-J Assistant" />
+                <h2 className="auth-title">{isLogin ? "Вход" : "Регистрация"}</h2>
+
+                <form onSubmit={handleSubmit} className="auth-form">
+                    <div className="form-group">
+                        <label htmlFor="email">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            placeholder="example@mail.ru"
+                        />
                     </div>
 
-                    <input
-                        id='email-input'
-                        className={`email-input ${!isEmailValid ? 'invalid' : ''}`}
-                        placeholder='Введите Email'
-                        type="email"
-                        value={email}
-                        onChange={handleEmailChange}
-                        required
-                    />
-                    {!isEmailValid && emailError && (
-                        <div className="error-message">{emailError}</div>
-                    )}
-
-                    <input
-                        id='password-input'
-                        className={`password-input ${passwordError ? 'invalid' : ''}`}
-                        placeholder='Введите пароль'
-                        type="password"
-                        value={password}
-                        onChange={handlePasswordChange}
-                        required
-                    />
-
-                    {isRegistration && (
+                    <div className="form-group">
+                        <label htmlFor="password">Пароль</label>
                         <input
-                            id='password-input-repeat'
-                            className={`password-input-repeat ${passwordError ? 'invalid' : ''}`}
-                            placeholder='Повторите пароль'
                             type="password"
-                            value={passwordRepeat}
-                            onChange={handlePasswordRepeatChange}
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
+                            placeholder="Введите пароль"
                         />
-                    )}
+                    </div>
 
-                    {passwordError && (
-                        <div className="error-message">{passwordError}</div>
-                    )}
+                    {error && <div className="error-message">{error}</div>}
 
                     <button
-                        id='sign-in-button'
-                        className='sign-in-button'
                         type="submit"
-                        disabled={!isFormValid}
+                        className="auth-button"
+                        disabled={loading}
                     >
-                        {isRegistration ? 'Зарегистрироваться' : 'Войти'}
+                        {loading ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}
                     </button>
+                </form>
 
-                    <img
-                        id='robot-circle-flat-icon'
-                        className='robot-circle-flat-icon'
-                        src={logo}
-                        alt="Ассистент Т-Ж"
-                    />
-
-                    <div id='assistant-text-logo' className='assistant-text-logo'>
-                        Ассистент Т-Ж
-                    </div>
+                <div className="auth-switch">
+                    <p>
+                        {isLogin ? "Нет аккаунта? " : "Уже есть аккаунт? "}
+                        <button
+                            type="button"
+                            className="switch-button"
+                            onClick={() => {
+                                setIsLogin(!isLogin);
+                                setError("");
+                            }}
+                        >
+                            {isLogin ? "Зарегистрироваться" : "Войти"}
+                        </button>
+                    </p>
                 </div>
-            </form>
-        </main>
+            </div>
+        </div>
     );
 }

@@ -11,7 +11,7 @@ export default function Main() {
     const [currentChatId, setCurrentChatId] = useState(null);
     const textareaRef = useRef(null);
 
-    const API_BASE_URL = "http://localhost:8000";
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
     const adjustTextareaHeight = () => {
         const textarea = textareaRef.current;
@@ -38,26 +38,27 @@ export default function Main() {
                 headers["Authorization"] = `Bearer ${token}`;
             }
 
-            const requestBody = {
-                content: content,
-                chat_id: chatId
-            };
+            const requestBody = chatId
+                ? { content, chat_id: chatId }
+                : { content };
 
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: "POST",
                 headers: headers,
                 body: JSON.stringify(requestBody),
-                credentials: "include"
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    localStorage.removeItem("auth_token");
+                    window.location.reload();
+                    throw new Error("Требуется авторизация");
+                }
                 const errorText = await response.text();
-                console.error("Ошибка сервера:", response.status, errorText);
-                throw new Error(`Ошибка: ${response.status}`);
+                throw new Error(`Ошибка: ${response.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             console.error("Ошибка при отправке сообщения:", error);
             throw error;
