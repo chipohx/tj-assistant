@@ -1,110 +1,221 @@
 import React, { useState } from "react";
-import robotIcon from "../assets/images/robot.png";
+import logo from "../assets/images/robot.png";
 
 export default function Registration({ onLogin }) {
-    const [isLogin, setIsLogin] = useState(true);
+    const [isRegistration, setIsRegistration] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [passwordRepeat, setPasswordRepeat] = useState("");
+    const [isEmailValid, setIsEmailValid] = useState(true);
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [isFormValid, setIsFormValid] = useState(true);
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+    const handleRegistrationClick = () => {
+        setIsRegistration(true);
+        setPasswordError("");
+        setIsFormValid(true);
+    };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
+    const handleSignInClick = () => {
+        setIsRegistration(false);
+        setPasswordError("");
+        setIsFormValid(true);
+    };
 
-        const endpoint = isLogin ? "/auth/login" : "/auth/register";
-        const formData = new FormData();
-        formData.append("username", email);
-        formData.append("password", password);
+    const handleEmailChange = (e) => {
+        const value = e.target.value;
+        setEmail(value);
 
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.detail || "Ошибка авторизации");
-            }
-
-            const data = await response.json();
-
-            if (isLogin) {
-                localStorage.setItem("auth_token", data.access_token);
-                onLogin();
+        if (value === "") {
+            setIsEmailValid(true);
+            setEmailError("");
+        } else {
+            const isValid = validateEmail(value);
+            setIsEmailValid(isValid);
+            if (!isValid) {
+                setEmailError("Введите корректный email");
             } else {
-                alert("Регистрация успешна! Проверьте email для подтверждения.");
-                setIsLogin(true);
+                setEmailError("");
             }
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
+        }
+        validateForm();
+    };
+
+    const handlePasswordChange = (e) => {
+        const value = e.target.value;
+        setPassword(value);
+        if (isRegistration && passwordRepeat && value !== passwordRepeat) {
+            setPasswordError("Пароли не совпадают");
+        } else {
+            setPasswordError("");
+        }
+        validateForm();
+    };
+
+    const handlePasswordRepeatChange = (e) => {
+        const value = e.target.value;
+        setPasswordRepeat(value);
+
+        if (isRegistration) {
+            if (password && value !== password) {
+                setPasswordError("Пароли не совпадают");
+            } else {
+                setPasswordError("");
+            }
+        }
+        validateForm();
+    };
+
+    const validateEmail = (email) => {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    };
+
+    const validateForm = () => {
+        if (isRegistration) {
+            const emailValid = validateEmail(email);
+            const passwordsMatch = password === passwordRepeat;
+            const passwordsNotEmpty = password && passwordRepeat;
+
+            setIsFormValid(emailValid && passwordsMatch && passwordsNotEmpty);
+        } else {
+            const emailValid = validateEmail(email);
+            const passwordNotEmpty = password.length > 0;
+
+            setIsFormValid(emailValid && passwordNotEmpty);
         }
     };
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        if (!validateEmail(email)) {
+            setIsEmailValid(false);
+            setEmailError("Введите корректный email");
+            return;
+        }
+
+        if (isRegistration) {
+            if (password !== passwordRepeat) {
+                setPasswordError("Пароли не совпадают");
+                setIsFormValid(false);
+                return;
+            }
+
+            if (password.length < 6) {
+                setPasswordError("Пароль должен быть не менее 6 символов");
+                setIsFormValid(false);
+                return;
+            }
+        }
+
+        if (!isRegistration && password.length < 6) {
+            setPasswordError("Пароль должен быть не менее 6 символов");
+            setIsFormValid(false);
+            return;
+        }
+
+        console.log("Email:", email);
+        console.log("Password:", password);
+        if (isRegistration) {
+            console.log("Регистрация нового пользователя");
+        } else {
+            console.log("Вход пользователя");
+        }
+
+        setTimeout(() => {
+            onLogin();
+        }, 500);
+    };
+
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <img className="auth-logo" src={robotIcon} alt="T-J Assistant" />
-                <h2 className="auth-title">{isLogin ? "Вход" : "Регистрация"}</h2>
-
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group">
-                        <label htmlFor="email">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            placeholder="example@mail.ru"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="password">Пароль</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            placeholder="Введите пароль"
-                        />
-                    </div>
-
-                    {error && <div className="error-message">{error}</div>}
-
-                    <button
-                        type="submit"
-                        className="auth-button"
-                        disabled={loading}
-                    >
-                        {loading ? "Загрузка..." : (isLogin ? "Войти" : "Зарегистрироваться")}
-                    </button>
-                </form>
-
-                <div className="auth-switch">
-                    <p>
-                        {isLogin ? "Нет аккаунта? " : "Уже есть аккаунт? "}
+        <main className='registration-main'>
+            <form onSubmit={handleSubmit}>
+                <div
+                    id='registration-form'
+                    className={`registration-form ${!isRegistration ? 'no-account' : ''}`}
+                    style={{ height: isRegistration ? '472px' : '384px' }}
+                >
+                    <div id='sign-type' className='sign-type'>
                         <button
                             type="button"
-                            className="switch-button"
-                            onClick={() => {
-                                setIsLogin(!isLogin);
-                                setError("");
-                            }}
+                            id='signin-button'
+                            className={`signin-button ${!isRegistration ? 'active' : ''}`}
+                            onClick={handleSignInClick}
                         >
-                            {isLogin ? "Зарегистрироваться" : "Войти"}
+                            Вход
                         </button>
-                    </p>
+                        <button
+                            type="button"
+                            id='reg-button'
+                            className={`reg-button ${isRegistration ? 'active' : ''}`}
+                            onClick={handleRegistrationClick}
+                        >
+                            Регистрация
+                        </button>
+                    </div>
+
+                    <input
+                        id='email-input'
+                        className={`email-input ${!isEmailValid ? 'invalid' : ''}`}
+                        placeholder='Введите Email'
+                        type="email"
+                        value={email}
+                        onChange={handleEmailChange}
+                        required
+                    />
+                    {!isEmailValid && emailError && (
+                        <div className="error-message">{emailError}</div>
+                    )}
+
+                    <input
+                        id='password-input'
+                        className={`password-input ${passwordError ? 'invalid' : ''}`}
+                        placeholder='Введите пароль'
+                        type="password"
+                        value={password}
+                        onChange={handlePasswordChange}
+                        required
+                    />
+
+                    {isRegistration && (
+                        <input
+                            id='password-input-repeat'
+                            className={`password-input-repeat ${passwordError ? 'invalid' : ''}`}
+                            placeholder='Повторите пароль'
+                            type="password"
+                            value={passwordRepeat}
+                            onChange={handlePasswordRepeatChange}
+                            required
+                        />
+                    )}
+
+                    {passwordError && (
+                        <div className="error-message">{passwordError}</div>
+                    )}
+
+                    <button
+                        id='sign-in-button'
+                        className='sign-in-button'
+                        type="submit"
+                        disabled={!isFormValid}
+                    >
+                        {isRegistration ? 'Зарегистрироваться' : 'Войти'}
+                    </button>
+
+                    <img
+                        id='robot-circle-flat-icon'
+                        className='robot-circle-flat-icon'
+                        src={logo}
+                        alt="Ассистент Т-Ж"
+                    />
+
+                    <div id='assistant-text-logo' className='assistant-text-logo'>
+                        Ассистент Т-Ж
+                    </div>
                 </div>
-            </div>
-        </div>
+            </form>
+        </main>
     );
 }

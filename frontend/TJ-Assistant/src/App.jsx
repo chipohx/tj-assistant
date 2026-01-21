@@ -2,31 +2,29 @@ import React, { useState, useEffect } from "react";
 import Header from "./components/Header.jsx";
 import Main from "./components/Main.jsx";
 import Registration from "./components/Registration.jsx";
-import "./App.css";
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
-        // Проверяем токен при загрузке
-        const token = localStorage.getItem("auth_token");
+        const token = localStorage.getItem("authToken");
         if (token) {
-            // Можно добавить проверку токена через API
             setIsLoggedIn(true);
         }
     }, []);
 
     const handleLogin = () => {
         setIsLoggedIn(true);
+        localStorage.setItem("authToken", "example-token");
     };
 
     const handleLogout = () => {
         setIsLoggedIn(false);
-        localStorage.removeItem("auth_token");
+        localStorage.removeItem("authToken");
     };
 
     return (
-        <div className="app">
+        <>
             {isLoggedIn ? (
                 <>
                     <Header onLogout={handleLogout} />
@@ -35,7 +33,7 @@ function App() {
             ) : (
                 <Registration onLogin={handleLogin} />
             )}
-        </div>
+        </>
     );
 }
 
