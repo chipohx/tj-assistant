@@ -1,49 +1,28 @@
-from typing import Annotated
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
-import httpx
-import requests
 
-from fastapi import Depends, APIRouter, HTTPException, Query
-from sqlalchemy.orm import Session, defer
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import Select
+from sqlalchemy.orm import Session, defer
 
-from app.core.user import get_current_active_user, get_user
-from app.models.models import Message, Role, Chat, User
-from app.database.session import get_db
 from app.api.schemas.schemas import (
-    MessageSchema,
     ChatRequest,
     ChatResponse,
+    MessageSchema,
     MessagesListResponse,
-    UserSchema,
     NewChat,
+    UserSchema,
 )
+from app.core.user import get_current_active_user
+from app.database.db import create_chat, create_message
+from app.database.session import get_db
+from app.models.models import Chat, Message, Role, User
+from app.services.llm import request_llm_response
+
 
 router = APIRouter()
-
-
-def create_message_in_db(db: Session, content: str, role: Role, chat_id: UUID) -> UUID:
-    try:
-        new_message = Message(chat_id=chat_id, content=content, role=role)
-        db.add(new_message)
-        db.commit()
-        db.refresh(new_message)
-        return new_message.id
-    except Exception as e:
-        print(f"Error: {e}")
-
-
-def create_chat(db: Session, title: str, user: User):
-    try:
-        new_chat = Chat(title=title, user_id=user.id)
-        db.add(new_chat)
-        db.commit()
-        db.refresh(new_chat)
-        return new_chat.id
-    except Exception as e:
-        print(f"Error: {e}")
-        return
 
 
 @router.post("/new-chat")
@@ -55,72 +34,43 @@ async def new_chat(
     return NewChat(chat_id=chat_id)
 
 
-@router.post("/chat")
-async def send_message(
-    request: ChatRequest,
-    user: Annotated[User, Depends(get_current_active_user)],
-    db: Session = Depends(get_db),
-) -> ChatResponse:
-    return ChatResponse(
-        content="Привет",
-        timestamp=datetime.now(),
-        chat_created=UUID("12345678-1234-5678-1234-567812345678"),
-    )
-
-
 # @router.post("/chat")
 # async def send_message(
 #     request: ChatRequest,
 #     user: Annotated[User, Depends(get_current_active_user)],
 #     db: Session = Depends(get_db),
 # ) -> ChatResponse:
+#     return ChatResponse(
+#         content="Привет",
+#         timestamp=datetime.now(),
+#         chat_created=UUID("12345678-1234-5678-1234-567812345678"),
+#     )
 
-#     if not request.chat_id:
-#         chat_created = create_chat(db, request.content[:30], user)
-#     chat_id = chat_created if chat_created else request.chat_id
 
-#     create_message_in_db(db, request.content, Role.USER, chat_id)
+@router.post("/chat")
+async def send_message(
+    request: ChatRequest,
+    user: Annotated[User, Depends(get_current_active_user)],
+    db: Session = Depends(get_db),
+) -> ChatResponse:
 
-#     async with httpx.AsyncClient() as client:
-#         try:
-#             health_check = await client.get("http://main:8001/health", timeout=30.0)
+    if not request.chat_id:
+        chat_created = create_chat(db, request.content[:30], user)
+    chat_id = chat_created if chat_created else request.chat_id
 
-#             if health_check.status_code != 200:
-#                 print(f"Health check failed: {health_check.status_code}")
-#                 raise HTTPException(
-#                     status_code=503,
-#                     detail=f"LLM service health check failed: {health_check.text}",
-#                 )
+    create_message(db, request.content, Role.USER, chat_id)
 
-#             response = await client.post(
-#                 "http://main:8001/llm_response",
-#                 json={"query": request.content},
-#                 timeout=60.0,
-#             )
-#         except httpx.RequestError as e:
-#             print(f"Ошибка сети: {e}")
-#             raise HTTPException(status_code=500, detail="LLM service unreachable")
+    response_content = request_llm_response(request.content)
+    if response_content:
+        create_message(db, response_content, Role.SYSTEM, chat_id)
 
-#     if response.status_code != 200:
-#         raise HTTPException(status_code=502, detail="Failed generating response")
-
-#     try:
-#         response_dict = response.json()
-#     except ValueError:
-#         raise HTTPException(status_code=502, detail="Invalid JSON from LLM service")
-
-#     response_content = response_dict["response"]
-
-#     if response_content:
-#         message_id = create_message_in_db(db, response_content, Role.SYSTEM, chat_id)
-
-#         return ChatResponse(
-#             content=response_content,
-#             timestamp=datetime.now(),
-#             chat_created=chat_id,
-#         )
-#     else:
-#         raise HTTPException(status_code=502, detail="Empty response from LLM service")
+        return ChatResponse(
+            content=response_content,
+            timestamp=datetime.now(),
+            chat_created=chat_id,
+        )
+    else:
+        raise HTTPException(status_code=502, detail="Empty response from LLM service")
 
 
 @router.get("/chats")
@@ -138,7 +88,9 @@ async def get_chats(
     except Exception as e:
         print(f"Ошибка при попытке получить чаты: {e}")
 
-    return {"items": [chat.__dict__ for chat in chats]}
+    chats_dicts = [chat.__dict__ for chat in chats]
+
+    return {"items": chats_dicts, "count": len(chats_dicts)}
 
 
 @router.get("/chat/{chat_id}/messages", response_model=MessagesListResponse)
