@@ -2,12 +2,13 @@ from datetime import datetime
 import uuid
 from enum import Enum as PyEnum
 
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import DateTime, String, ForeignKey, Enum, Boolean, func
 from sqlalchemy.dialects.postgresql import UUID
 
 
-class Base(DeclarativeBase):
+class Base(DeclarativeBase, AsyncAttrs):
     pass
 
 

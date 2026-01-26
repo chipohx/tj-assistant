@@ -1,6 +1,10 @@
-import jwt, os
+import os
+from datetime import datetime, timedelta, timezone
+
+import jwt
 from dotenv import load_dotenv
-from datetime import datetime, timezone, timedelta
+from fastapi import HTTPException
+from jwt.exceptions import DecodeError, ExpiredSignatureError, InvalidTokenError
 from pwdlib import PasswordHash
 
 load_dotenv()
@@ -40,6 +44,18 @@ def decode_token(token: str):
     if not SECRET_KEY:
         raise Exception("SECRET_KEY not specified in .env")
 
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    username = payload.get("sub")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        print(username)
+
+        if not username:
+            raise HTTPException(status_code=400, detail="Invalid token")
+    except DecodeError:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Token expired")
+    except InvalidTokenError:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
     return username
