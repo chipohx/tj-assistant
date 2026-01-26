@@ -1,9 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from typing import List, Generic, TypeVar
-from app.models.models import Message, Role
+from app.models.models import Role
 
 T = TypeVar("T")
 

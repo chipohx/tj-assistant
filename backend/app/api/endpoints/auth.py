@@ -2,12 +2,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.schemas import Token, UserSchema
-from app.core.secuirity import create_token, decode_token, get_password_hash
-from app.core.user import authenticate_user, get_current_active_user
-from app.database.session import get_db
+from app.core.secuirity import create_token, decode_token
+from app.core.user import (
+    authenticate_user,
+    get_current_active_user,
+    get_user,
+    create_user,
+)
+from app.database.session_async import get_db
 from app.mailing.send_verification_email import send_verification_email
 from app.models.models import User
 
@@ -27,7 +32,7 @@ async def read_users_me(
 @router.post("/auth/login")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Авторизует пользователя в системе
 
@@ -35,7 +40,7 @@ async def login(
     Если данные корректны, выдает токен авторизации
     """
 
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
 
@@ -47,23 +52,18 @@ async def login(
 @router.post("/auth/register")
 async def register(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Создает пользователя в бд
 
     Перед этим проверяет существование его в бд,
     а также факт верификации аккаунта пользователя"""
 
-    db_user = db.query(User).filter(User.email == form_data.username).first()
-    if db_user and db_user.activated:
+    user: User = await get_user(form_data.username, db)
+    if user and user.activated:
         raise HTTPException(status_code=409, detail="Account already exists")
 
-    new_user = User(
-        email=form_data.username, password=get_password_hash(form_data.password)
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await create_user(db, form_data.username, form_data.password)
 
     email = form_data.username
     await send_verification_email(email)
@@ -72,12 +72,12 @@ async def register(
 
 @router.post("/auth/request-verify-token", status_code=status.HTTP_202_ACCEPTED)
 async def request_verify_token(
-    email: str = Body(..., embed=True), db: Session = Depends(get_db)
+    email: str = Body(..., embed=True), db: AsyncSession = Depends(get_db)
 ):
     """Заново посылает уведомление для верификации на почту"""
-    db_user = db.query(User).filter(User.email == email).first()
-    if db_user:
-        if not db_user.activated:
+    user: User = await get_user(email, db)
+    if user:
+        if not user.activated:
             await send_verification_email(email)
         else:
             # TODO Заменить на логгер
@@ -86,13 +86,13 @@ async def request_verify_token(
 
 
 @router.get("/auth/verify-email", status_code=status.HTTP_200_OK)
-async def verify_account(token: str, db: Session = Depends(get_db)):
+async def verify_account(token: str, db: AsyncSession = Depends(get_db)):
     """Принимает токен верификации из письма
     и активирует аккаунт пользователя"""
 
     email = decode_token(token)
 
-    user = db.query(User).filter(User.email == email).first()
+    user: User = await get_user(email, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -101,9 +101,9 @@ async def verify_account(token: str, db: Session = Depends(get_db)):
 
     try:
         user.activated = True
-        db.commit()
+        await db.commit()
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(status_code=500, detail="Failed to activate account")
 
     return {"message": "Email successfully verified"}

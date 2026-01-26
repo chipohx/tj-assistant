@@ -47,6 +47,7 @@ def decode_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
+        print(username)
 
         if not username:
             raise HTTPException(status_code=400, detail="Invalid token")
