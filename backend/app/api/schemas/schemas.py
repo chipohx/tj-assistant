@@ -1,9 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from typing import List, Generic, TypeVar
-from app.models.models import Message, Role
+from app.models.models import Role
 
 T = TypeVar("T")
 
@@ -34,7 +34,6 @@ class MessageSchema(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    message_id: UUID
     content: str
     timestamp: datetime
     chat_created: UUID | None

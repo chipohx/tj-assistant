@@ -1,12 +1,12 @@
-import aiosmtplib, os
-from dotenv import load_dotenv
-
+import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import aiosmtplib
+from dotenv import load_dotenv
 
 load_dotenv()
-host = "smtp.gmail.com"
+host = os.getenv("EMAIL_HOST", default="smtp.gmail.com")
 email = os.getenv("EMAIL_LOGIN")
 password = os.getenv("EMAIL_PASSWORD")
 

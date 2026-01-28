@@ -17,6 +17,7 @@ async def send_verification_email(email: str):
     except Exception as e:
         print(f"Couldn't create verification_token: {e}")
 
+    print(verification_token)
     verification_url = (
         f"http://localhost:8000/api/auth/verify-email?token={verification_token}"
     )
@@ -27,7 +28,7 @@ async def send_verification_email(email: str):
     try:
         with open(filepath, "r", encoding="utf-8") as file:
             template = file.read()
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         print(f"Couldn't find template for email verifying: {e}")
 
     data = {}

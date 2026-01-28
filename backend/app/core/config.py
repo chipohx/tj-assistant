@@ -13,7 +13,11 @@ class Settings(BaseSettings):
     @property
     def DATABASE_URL(self) -> str:
         password = quote_plus(self.DB_PASS)
-        return f"postgresql://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return (
+            f"postgresql+asyncpg://{self.DB_USER}:"
+            f"{password}@{self.DB_HOST}:"
+            f"{self.DB_PORT}/{self.DB_NAME}"
+        )
 
     class Config:
         env_file = ".env"
