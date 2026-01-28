@@ -50,12 +50,12 @@ async def send_message(
 
     await create_message(db, request.content, Role.USER, chat_id)
 
-    # response_content = await request_llm_response(request.content)
+    response_content = await request_llm_response(request.content)
 
-    response_content = (
-        f"Это тестовый ответ от ассистента на ваш запрос: '{request.content}'."
-        "ML-сервис находится в разработке и будет подключен позже."
-    )
+    # response_content = (
+    #     f"Это тестовый ответ от ассистента на ваш запрос: '{request.content}'."
+    #     "ML-сервис находится в разработке и будет подключен позже."
+    # )
 
     assistant_message_id = await create_message(
         db, response_content, Role.SYSTEM, chat_id

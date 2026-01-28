@@ -39,6 +39,14 @@ async def login(
     return Token(access_token=access_token, token_type="bearer")
 
 
+@router.post("/auth/test-register")
+async def test_register(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: AsyncSession = Depends(get_db),
+):
+    await create_user(db, form_data.username, form_data.password)
+
+
 @router.post("/auth/register")
 async def register(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],

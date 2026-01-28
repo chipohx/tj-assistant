@@ -81,106 +81,106 @@ services:
 
   # ========== ML SERVICES ==========
   
-#  # ---------- embedding_model ----------
-#  embedding_model:
-#    <<: *ml-common
-#    build:
-#      <<: *ml-build
-#      target: embedding_model
-#    container_name: embedding_model_service
-#    command: uvicorn embedding_model:app --reload --host 0.0.0.0 --port 5003
-#    ports: ["5003:5003"]
-#    volumes:
-#      - ./ml/embedding_model:/app
-#      - hf_cache:/root/.cache/huggingface
-#    environment:
-#      PYTHONUNBUFFERED: "1"
-#      PORT: "5003"
-#    healthcheck:
-#      <<: *healthcheck-fast
-#      start_period: 120s
-#
-#  # ---------- vector_db ----------
-#  vector_db:
-#    <<: *ml-common
-#    build:
-#      <<: *ml-build
-#      target: vector_db
-#    container_name: vector_db_service
-#    command: uvicorn chroma_db:app --reload --host 0.0.0.0 --port 5004
-#    ports: ["5004:5004"]
-#    volumes:
-#      - ./ml/vector_db:/app
-#      - ./ml/vector_db/chroma_db:/app/chroma_db
-#    environment:
-#      PYTHONUNBUFFERED: "1"
-#      CHROMA_DB_PATH: /app/chroma_db
-#      EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large-instruct
-#      PORT: "5004"
-#    healthcheck:
-#      <<: *healthcheck-fast
-#      start_period: 10s
-#    depends_on:
-#      embedding_model:
-#        condition: service_healthy
-#
-#  # ---------- llm ----------
-#  llm:
-#    <<: *ml-common
-#    build:
-#      <<: *ml-build
-#      target: llm
-#    container_name: llm_service
-#    command: uvicorn llm_local:app --reload --host 0.0.0.0 --port 5005
-#    ports: ["5005:5005"]
-#    volumes:
-#      - ./ml/llm:/app
-#      - hf_cache:/root/.cache/huggingface
-#    environment:
-#      PYTHONUNBUFFERED: "1"
-#      PORT: "5005"
-#    healthcheck:
-#      <<: *healthcheck-fast
-#      start_period: 120s
-#    depends_on:
-#      vector_db:
-#        condition: service_healthy
-#      embedding_model:
-#        condition: service_healthy
-#
-#  # ---------- main ----------
-#  main:
-#    <<: *ml-common
-#    build:
-#      <<: *ml-build
-#      target: main
-#    container_name: main_service
-#    command: uvicorn main:app --reload --host 0.0.0.0 --port 8001
-#    ports: ["8001:8001"]
-#    volumes:
-#      - ./ml/main:/app
-#    environment:
-#      PYTHONUNBUFFERED: "1"
-#      EMBEDDING_MODEL_URL: http://embedding_model:5003
-#      VECTOR_DB_URL: http://vector_db:5004
-#      LLM_URL: http://llm:5005
-#    depends_on:
-#      embedding_model:
-#        condition: service_healthy
-#      vector_db:
-#        condition: service_healthy
-#      llm:
-#        condition: service_healthy
-#
-#  # ---------- notifier ----------
-#  notifier:
-#    image: alpine
-#    container_name: tj_notifier
-#    networks:
-#      - tj-assistant-network
-#    depends_on:
-#      llm:
-#        condition: service_healthy
-#      backend:
-#        condition: service_started
-#    command: ["sh", "-c", "echo '✅ Все сервисы готовы (Backend + ML)'"]
+  # ---------- embedding_model ----------
+  embedding_model:
+    <<: *ml-common
+    build:
+      <<: *ml-build
+      target: embedding_model
+    container_name: embedding_model_service
+    command: uvicorn embedding_model:app --reload --host 0.0.0.0 --port 5003
+    ports: ["5003:5003"]
+    volumes:
+      - ./ml/embedding_model:/app
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PORT: "5003"
+    healthcheck:
+      <<: *healthcheck-fast
+      start_period: 120s
+
+  # ---------- vector_db ----------
+  vector_db:
+    <<: *ml-common
+    build:
+      <<: *ml-build
+      target: vector_db
+    container_name: vector_db_service
+    command: uvicorn chroma_db:app --reload --host 0.0.0.0 --port 5004
+    ports: ["5004:5004"]
+    volumes:
+      - ./ml/vector_db:/app
+      - ./ml/vector_db/chroma_db:/app/chroma_db
+    environment:
+      PYTHONUNBUFFERED: "1"
+      CHROMA_DB_PATH: /app/chroma_db
+      EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large-instruct
+      PORT: "5004"
+    healthcheck:
+      <<: *healthcheck-fast
+      start_period: 10s
+    depends_on:
+      embedding_model:
+        condition: service_healthy
+
+  # ---------- llm ----------
+  llm:
+    <<: *ml-common
+    build:
+      <<: *ml-build
+      target: llm
+    container_name: llm_service
+    command: uvicorn llm_local:app --reload --host 0.0.0.0 --port 5005
+    ports: ["5005:5005"]
+    volumes:
+      - ./ml/llm:/app
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PORT: "5005"
+    healthcheck:
+      <<: *healthcheck-fast
+      start_period: 120s
+    depends_on:
+      vector_db:
+        condition: service_healthy
+      embedding_model:
+        condition: service_healthy
+
+  # ---------- main ----------
+  main:
+    <<: *ml-common
+    build:
+      <<: *ml-build
+      target: main
+    container_name: main_service
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8001
+    ports: ["8001:8001"]
+    volumes:
+      - ./ml/main:/app
+    environment:
+      PYTHONUNBUFFERED: "1"
+      EMBEDDING_MODEL_URL: http://embedding_model:5003
+      VECTOR_DB_URL: http://vector_db:5004
+      LLM_URL: http://llm:5005
+    depends_on:
+      embedding_model:
+        condition: service_healthy
+      vector_db:
+        condition: service_healthy
+      llm:
+        condition: service_healthy
+
+  # ---------- notifier ----------
+  notifier:
+    image: alpine
+    container_name: tj_notifier
+    networks:
+      - tj-assistant-network
+    depends_on:
+      llm:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    command: ["sh", "-c", "echo '✅ Все сервисы готовы (Backend + ML)'"]
