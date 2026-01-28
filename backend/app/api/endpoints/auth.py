@@ -69,6 +69,24 @@ async def register(
     await send_verification_email(email)
     return {"detail": "Account created successfully", "email": email}
 
+@router.post("/auth/test-register")
+async def test_register(db: Session = Depends(get_db)):
+    """Создает тестового пользователя для разработки"""
+
+    from app.core.secuirity import get_password_hash
+
+    test_user = db.query(User).filter(User.email == "test@test.com").first()
+    if not test_user:
+        new_user = User(
+            email="test@test.com",
+            password=get_password_hash("password123"),
+            activated=True
+        )
+        db.add(new_user)
+        db.commit()
+        return {"detail": "Test user created", "email": "test@test.com"}
+    return {"detail": "Test user already exists"}
+
 
 @router.post("/auth/request-verify-token", status_code=status.HTTP_202_ACCEPTED)
 async def request_verify_token(

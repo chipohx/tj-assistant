@@ -1,22 +1,16 @@
-Как запустить:
-npm (Node Package Manager) можно установить в Visual Studio Code (VS Code), но перед этим необходимо установить Node.js. npm включён в дистрибутив Node.js, и если Node.js уже установлен, npm будет доступен автоматически. 
-Процесс установки зависит от операционной системы. 
+# React + Vite
 
-На Windows:
-Чтобы установить npm в VS Code на Windows, нужно: 
-Скачать Node.js с официального сайта. Рекомендуется выбрать версию LTS (Long-Term Support).
-Запустить установочный файл и следовать мастеру установки. Во время настройки нужно выбрать опцию «Установить npm» (обычно включена по умолчанию).
-Проверить установку после установки: открыть командную строку (или PowerShell) и ввести команды node -v и npm -v. Если обе команды возвращают номера версий, Node.js и npm установлены правильно.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-На macOS
-Для macOS установка npm в VS Code не отличается — npm доступен в дистрибутиве Node.js для macOS. Важно: при установке нужно выбрать пакет npm, предназначенный для macOS, — другие версии могут не быть протестированы с npm.
+Currently, two official plugins are available:
 
-Далее bush-консоль:
-cd *путь до проект*
-npm run dev
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-Появится ссылка с компилируемым проектом в localhost.
+## React Compiler
 
-Если npm run dev не сработало перед этим стоит попробовать ввести npm install или npm start.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-https://github.com/SamNitelno/TJ-Assistant
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

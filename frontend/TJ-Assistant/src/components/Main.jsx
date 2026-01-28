@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import robotIcon from "../assets/images/robot.png";
-import profileIcon from "../assets/images/account.png";
 import sendButton from "../assets/images/send-btn.png";
 import copyButton from "../assets/images/copy-btn.png";
 
@@ -8,7 +7,11 @@ export default function Main() {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [copiedMessageId, setCopiedMessageId] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentChatId, setCurrentChatId] = useState(null);
     const textareaRef = useRef(null);
+
+    const API_BASE_URL = "http://localhost:8000/api";
 
     const adjustTextareaHeight = () => {
         const textarea = textareaRef.current;
@@ -24,26 +27,113 @@ export default function Main() {
         adjustTextareaHeight();
     }, [message]);
 
-    const handleSendMessage = () => {
-        if (message.trim() === "") return;
+    const sendMessageToServer = async (content, chatId = null) => {
+        try {
+            const token = localStorage.getItem("authToken");
+            const headers = {
+                "Content-Type": "application/json",
+            };
+
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            const requestBody = {
+                content: content,
+            };
+
+            if (chatId) {
+                requestBody.chat_id = chatId;
+            }
+
+            console.log("Отправка запроса на /chat:", {
+                url: `${API_BASE_URL}/chat`,
+                headers,
+                body: requestBody
+            });
+
+            const response = await fetch(`${API_BASE_URL}/chat`, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(requestBody),
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Ошибка сервера:", response.status, errorText);
+
+                let errorMessage = `Ошибка: ${response.status}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.detail) {
+                        errorMessage = errorJson.detail;
+                    }
+                } catch (e) {
+                    if (errorText) {
+                        errorMessage = errorText;
+                    }
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            console.log("Ответ от сервера:", data);
+            return data;
+        } catch (error) {
+            console.error("Ошибка при отправке сообщения:", error);
+            throw error;
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (message.trim() === "" || isLoading) return;
 
         const userMessage = {
-            id: Date.now(),
+            id: Date.now().toString(),
             type: "user",
-            text: message
+            text: message,
+            timestamp: new Date().toISOString()
         };
 
-        const assistantMessage = {
-            id: Date.now() + 1,
-            type: "assistant",
-            text: message
-        };
-
-        setMessages(prev => [...prev, userMessage, assistantMessage]);
+        setMessages(prev => [...prev, userMessage]);
+        const currentMessage = message;
         setMessage("");
+        setIsLoading(true);
 
         if (textareaRef.current) {
             textareaRef.current.style.height = '40px';
+        }
+
+        try {
+            const response = await sendMessageToServer(currentMessage, currentChatId);
+
+            const assistantMessage = {
+                id: response.message_id || `assistant-${Date.now()}`,
+                type: "assistant",
+                text: response.content,
+                timestamp: response.timestamp || new Date().toISOString()
+            };
+
+            setMessages(prev => [...prev, assistantMessage]);
+
+            if (response.chat_created && !currentChatId) {
+                setCurrentChatId(response.chat_created);
+                console.log("Создан новый чат с ID:", response.chat_created);
+            }
+        } catch (error) {
+            console.error("Полная ошибка:", error);
+            const errorMessage = {
+                id: `error-${Date.now()}`,
+                type: "assistant",
+                text: `Извините, произошла ошибка: ${error.message}. Пожалуйста, попробуйте еще раз.`,
+                timestamp: new Date().toISOString(),
+                isError: true
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -65,7 +155,6 @@ export default function Main() {
         navigator.clipboard.writeText(text)
             .then(() => {
                 setCopiedMessageId(messageId);
-                // Скрываем подсказку через 2 секунды
                 setTimeout(() => {
                     setCopiedMessageId(null);
                 }, 2000);
@@ -118,18 +207,13 @@ export default function Main() {
                     {messages.map((msg) => (
                         <div
                             key={msg.id}
-                            className={`message-wrapper ${msg.type}-message-wrapper`}
+                            className={`message-wrapper ${msg.type}-message-wrapper ${msg.isError ? 'error-message' : ''}`}
                         >
                             {msg.type === "user" ? (
                                 <div className="user-message">
                                     <p className="user-message-text">
                                         {msg.text}
                                     </p>
-                                    <img
-                                        className="profile-icon profile-message-icon"
-                                        src={profileIcon}
-                                        alt="profile icon"
-                                    />
                                     <img
                                         className="copy-icon"
                                         src={copyButton}
@@ -142,7 +226,6 @@ export default function Main() {
                                 </div>
                             ) : (
                                 <div className="assistant-message dynamic-message">
-                                    <img className="robot-icon" src={robotIcon} alt="robot icon" />
                                     <p className="assistant-message-text">
                                         {msg.text}
                                     </p>
@@ -152,7 +235,6 @@ export default function Main() {
                                         alt="copy button"
                                         onClick={() => handleCopyText(msg.text, msg.id)}
                                     />
-                                    {/* Подсказка "Скопировано" */}
                                     {copiedMessageId === msg.id && (
                                         <div className="copy-tooltip">Скопировано</div>
                                     )}
@@ -160,6 +242,17 @@ export default function Main() {
                             )}
                         </div>
                     ))}
+                    {isLoading && (
+                        <div className="message-wrapper assistant-message-wrapper">
+                            <div className="assistant-message dynamic-message">
+                                <div className="loading-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -172,14 +265,17 @@ export default function Main() {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     rows={1}
+                    disabled={isLoading}
                 />
                 <button
                     className="send-message-button"
                     onClick={handleSendMessage}
+                    disabled={isLoading}
                     style={{
                         backgroundImage: `url(${sendButton})`,
                         backgroundSize: "contain",
                         backgroundRepeat: "no-repeat",
+                        opacity: isLoading ? 0.5 : 1
                     }}
                 ></button>
             </section>

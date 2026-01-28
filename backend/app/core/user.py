@@ -42,7 +42,7 @@ async def get_user(username: str, db: AsyncSession) -> User | None:
 
 async def authenticate_user(db: AsyncSession, username: str, password: str):
     """Проверяет пароль и email пользователя,
-    а также факт верификации аккауета
+    а также факт верификации аккаунта
     """
 
     user = await get_user(username, db)
@@ -59,9 +59,46 @@ async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)
 ):
     """oauth2_scheme возвращает ошибку 401 Not authenticated автоматически
-    если заголовок запроса не содержит токена авторазации, соответствие токена
-    выданному системой проверяется ниже"""
+    если заголовок запроса не содержит токена авторизации"""
 
+    # ВРЕМЕННОЕ РЕШЕНИЕ: для тестирования без реальной авторизации
+    # Проверяем, есть ли пользователь в базе
+    if token == "example-token":
+        # Ищем пользователя в базе (создадим его если нет)
+        user = db.query(User).filter(User.email == "test@example.com").first()
+        if not user:
+            # Создаем тестового пользователя для разработки
+            from app.core.secuirity import get_password_hash
+            user = User(
+                email="test@example.com",
+                password=get_password_hash("testpassword"),
+                activated=True  # Активируем для тестирования
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+#     try:
+#         username = decode_token(token)
+#         if username is None:
+#             raise credentials_exception
+#         token_data = TokenData(username=username)
+#     except ExpiredSignatureError:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token has expired",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
+#     except DecodeError:
+#         raise credentials_exception
+#     except InvalidTokenError:
+#         raise credentials_exception
+#     except Exception as e:
+#         print(f"JWT error: {e}")
+#         raise credentials_exception
+
+#     user = get_user(db, username=token_data.username)
     username = decode_token(token)
     user = await get_user(username, db)
 
@@ -75,7 +112,6 @@ async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     """Проверяем верификацию аккаунта"""
-
     if not current_user.activated:
         raise HTTPException(status_code=403, detail="Unverified user")
     return current_user

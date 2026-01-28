@@ -27,3 +27,58 @@
     url('../fonts/open_sans_semibold.ttf') format('truetype'), /* Safari, Android, iOS */
     url('../fonts/open_sans_semibold.svg#open_sans_semibold') format('svg'); /* Chrome < 4, Legacy iOS */
 }
+
+@font-face {
+    font-family: 'Jura Regular';
+    font-style: normal;
+    font-weight: normal;
+    src: url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/Jura-Regular.woff') format('woff');
+}
+
+
+@font-face {
+    font-family: 'Jura Book';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Jura Book'), url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/JuraBook.woff') format('woff');
+}
+
+
+@font-face {
+    font-family: 'Jura Light';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Jura Light'), url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/JuraLight.woff') format('woff');
+}
+
+
+@font-face {
+    font-family: 'Jura Medium';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Jura Medium'), url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/JuraMedium.woff') format('woff');
+}
+
+
+@font-face {
+    font-family: 'Jura Demi-Bold';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Jura Demi-Bold'), url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/JuraDemiBold.woff') format('woff');
+}
+
+
+@font-face {
+    font-family: 'Jura SemiBold';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Jura SemiBold'), url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/Jura-SemiBold.woff') format('woff');
+}
+
+
+@font-face {
+    font-family: 'Jura Bold';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Jura Bold'), url('../../../../tj_2/tj-assistant/frontend/TJ-Assistant/src/assets/fonts/Jura-Bold.woff') format('woff');
+}

@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import logo from "../assets/images/t-j.png";
+import logo from "../assets/images/robot.png";
 import questionIcon from "../assets/images/question.png";
-import profileIcon from "../assets/images/account.png";
+import chats from "../assets/images/chats.png";
+import plus from "../assets/images/plus.png";
+import profilelogo from "../assets/images/account.png";
 
 export default function Header() {
     const [showHelp, setShowHelp] = useState(false);
+    const [showChatHistory, setShowChatHistory] = useState(false);
 
     const toggleHelp = () => {
         setShowHelp(!showHelp);
@@ -14,29 +17,99 @@ export default function Header() {
         setShowHelp(false);
     };
 
+    const toggleChatHistory = () => {
+        setShowChatHistory(!showChatHistory);
+    };
+
+    const closeChatHistory = () => {
+        setShowChatHistory(false);
+    };
+
     return (
         <>
             <header className="header">
                 <img className="header-logo" src={logo} alt="T-J logo" />
+                <nav className="header-icons">
+                    <img
+                        className="chats-icon"
+                        src={chats}
+                        alt="chats icon"
+                        onClick={toggleChatHistory}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    <img
+                        className="plus-icon"
+                        src={plus}
+                        alt="plus icon"
+                    />
+                </nav>
                 <div className="header-description">
                     <h1 className="assistant-tj">Ассистент Т-Ж</h1>
                     <a className="ai-expert">AI-эксперт по статьям</a>
                 </div>
-                <nav className="header-icons">
-                    <img
-                        className="question-icon"
-                        src={questionIcon}
-                        alt="question icon"
-                        onClick={toggleHelp}
-                        style={{ cursor: 'pointer' }}
-                    />
-                    <img
-                        className="profile-icon"
-                        src={profileIcon}
-                        alt="profile icon"
-                    />
-                </nav>
+                <img
+                    className="question-icon"
+                    src={questionIcon}
+                    alt="question icon"
+                    onClick={toggleHelp}
+                    style={{ cursor: 'pointer' }}
+                />
             </header>
+            {showChatHistory && (
+                <div className="chat-history-overlay" onClick={closeChatHistory}>
+                    <div className="chat-history-sidebar" onClick={(e) => e.stopPropagation()}>
+                        <div className="chat-history-header">
+                            <img className="chats-logo" src={logo} alt="T-J logo" />
+                            <h2 className="chat-history-title">Т-Ж Ассистент</h2>
+                            <img
+                                className="close-chats-icon"
+                                src={chats}
+                                alt="chats icon"
+                                style={{ cursor: 'pointer' }}
+                                onClick={closeChatHistory}
+                            />
+                        </div>
+                        <div className="chat-history-content">
+                            <button className="new-chat">
+                                <img className="new-plus" src={plus} alt="Создать" />
+                                <span className="new-chat-text">Новый чат</span>
+                            </button>
+                            <div className="chat-history-list">
+
+                                <div className="chat-history-item">
+                                    <h4>Чат 5</h4>
+                                    <span className="chat-history-points">...</span>
+                                </div>
+
+                                <div className="chat-history-item">
+                                    <h4>Чат 4</h4>
+                                    <span className="chat-history-points">...</span>
+                                </div>
+
+                                <div className="chat-history-item">
+                                    <h4>Чат 3</h4>
+                                    <span className="chat-history-points">...</span>
+                                </div>
+
+                                <div className="chat-history-item">
+                                    <h4>Чат 2</h4>
+                                    <span className="chat-history-points">...</span>
+                                </div>
+
+                                <div className="chat-history-item">
+                                    <h4>Чат 1</h4>
+                                    <span className="chat-history-points">...</span>
+                                </div>
+                            </div>
+                            <button className="nickname-button">
+                                <img className="profile-icon" src={profilelogo} alt="Профиль" />
+                                <span className="nick">Никнейм</span>
+                                <span className="nickname-points">...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {showHelp && (
                 <div className="help-overlay">
