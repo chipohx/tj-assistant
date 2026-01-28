@@ -31,4 +31,9 @@ async def request_llm_response(message: str):
     except ValueError:
         raise HTTPException(status_code=502, detail="Invalid JSON from LLM service")
 
-    return response_dict["response"]
+    response_message = response_dict["response"]
+
+    if not response_message:
+        raise HTTPException(status_code=502, detail="Empty response from LLM service")
+
+    return response_message
