@@ -56,23 +56,23 @@ async def get_current_user(
     если заголовок запроса не содержит токена авторазации, соответствие токена
     выданному системой проверяется ниже"""
 
-    # Проверяем, есть ли пользователь в базе
-    if token == "example-token":
-        # Ищем пользователя в базе (создадим его если нет)
-        user = db.query(User).filter(User.email == "test@example.com").first()
-        if not user:
-            # Создаем тестового пользователя для разработки
-            from app.core.secuirity import get_password_hash
+    # # Проверяем, есть ли пользователь в базе
+    # if token == "example-token":
+    #     # Ищем пользователя в базе (создадим его если нет)
+    #     user = db.query(User).filter(User.email == "test@example.com").first()
+    #     if not user:
+    #         # Создаем тестового пользователя для разработки
+    #         from app.core.secuirity import get_password_hash
 
-            user = User(
-                email="test@example.com",
-                password=get_password_hash("testpassword"),
-                activated=True,  # Активируем для тестирования
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        return user
+    #         user = User(
+    #             email="test@example.com",
+    #             password=get_password_hash("testpassword"),
+    #             activated=True,  # Активируем для тестирования
+    #         )
+    #         db.add(user)
+    #         db.commit()
+    #         db.refresh(user)
+    #     return user
 
     username = decode_token(token)
     user = await get_user(username, db)
