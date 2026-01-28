@@ -31,8 +31,6 @@ async def get_user(username: str, db: AsyncSession) -> User | None:
     """Получаем объект пользователя в БД"""
 
     user: User = await db.scalar(select(User).where(User.email == username))
-    if user is None:
-        raise HTTPException(status_code=400, detail="Invalid username or password")
 
     return user
 

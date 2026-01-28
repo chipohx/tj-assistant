@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession\
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
 from app.models.models import Message, User, Chat
@@ -15,10 +15,10 @@ async def create_message(
         db.add(new_message)
         await db.commit()
         await db.refresh(new_message)
-        return await new_message.awaitable_attrs.id
-    except Exception as e:
+        return new_message.id
+    except Exception:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to save message")
+        raise HTTPException(status_code=500, detail="Failed to save message")
 
 
 async def create_chat(db: AsyncSession, title: str, user: User) -> UUID:
@@ -27,7 +27,7 @@ async def create_chat(db: AsyncSession, title: str, user: User) -> UUID:
         db.add(new_chat)
         await db.commit()
         await db.refresh(new_chat)
-        return new_chat.awaitable_attrs.id
-    except Exception as e:
+        return new_chat.id
+    except Exception:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create chat")
+        raise HTTPException(status_code=500, detail="Failed to create chat")

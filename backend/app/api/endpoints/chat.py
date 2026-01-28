@@ -23,30 +23,6 @@ from app.models.models import Chat, Message, Role, User
 from app.services.llm import request_llm_response
 
 
-# def create_message_in_db(db: Session, content: str, role: Role, chat_id: UUID) -> UUID:
-#     try:
-#         new_message = Message(chat_id=chat_id, content=content, role=role)
-#         db.add(new_message)
-#         db.commit()
-#         db.refresh(new_message)
-#         return new_message.id
-#     except Exception as e:
-#         print(f"Error: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to create message")
-
-
-# def create_chat(db: Session, title: str, user: User):
-#     try:
-#         new_chat = Chat(title=title, user_id=user.id)
-#         db.add(new_chat)
-#         db.commit()
-#         db.refresh(new_chat)
-#         return new_chat.id
-#     except Exception as e:
-#         print(f"Error: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to create chat")
-        
-        
 router = APIRouter()
 
 
@@ -72,10 +48,7 @@ async def send_message(
     else:
         chat_id = request.chat_id
 
-    try:
-        await create_message(db, request.content, Role.USER, chat_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save user message: {str(e)}")
+    await create_message(db, request.content, Role.USER, chat_id)
 
     # response_content = await request_llm_response(request.content)
 
@@ -95,24 +68,14 @@ async def send_message(
         chat_created=chat_id,
     )
 
-    try:
-        assistant_message_id = create_message_in_db(db, response_content, Role.SYSTEM, chat_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save assistant message: {str(e)}")
-
-    return ChatResponse(
-        message_id=assistant_message_id,
-        content=response_content,
-        timestamp=datetime.now(),
-        chat_created=chat_created,
-    )
-
 
 @router.get("/chats")
 async def get_chats(
     user: Annotated[User, Depends(get_current_active_user)],
     db: AsyncSession = Depends(get_db),
 ):
+    """Возвращяет список чатов"""
+
     try:
         chats = (
             await db.scalars(
@@ -135,11 +98,9 @@ async def get_chats(
             ],
             "count": len(chats),
         }
-    except Exception as e:
-        print(f"Ошибка при попытке получить чаты: {e}")
-        return {"items": [], "count": 0}
 
-    return {"items": chats, "count": len(chats)}
+    except Exception:
+        return {"items": [], "count": 0}
 
 
 @router.get("/chat/{chat_id}/messages", response_model=MessagesListResponse)
@@ -150,6 +111,7 @@ async def get_chat_sessions(
     limit: int = Query(20, ge=1, le=30),
     last_id: UUID | None = None,
 ):
+
     try:
         chat: Chat = await db.scalar(Select(Chat).filter(Chat.id == chat_id))
 
@@ -171,10 +133,10 @@ async def get_chat_sessions(
                 Select(Message).filter(Message.id == last_id)
             )
             if last_message:
-                query = await query.filter(Message.created > last_message.created)
+                query = query.filter(Message.created > last_message.created)
 
         # Применяем лимит
-        query = await query.limit(limit)
+        query = query.limit(limit)
 
         db_messages = (await db.scalars(query)).all()
 
@@ -193,5 +155,5 @@ async def get_chat_sessions(
         }
 
         return MessagesListResponse[MessageSchema].model_validate(response_data)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
