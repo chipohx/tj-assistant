@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import logo from "../assets/images/robot.png";
 
-export default function Registration({ onLogin }) {
+export default function Registration({ onLogin, onRegister }) {
     const [isRegistration, setIsRegistration] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -10,6 +10,7 @@ export default function Registration({ onLogin }) {
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [isFormValid, setIsFormValid] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleRegistrationClick = () => {
         setIsRegistration(true);
@@ -87,12 +88,15 @@ export default function Registration({ onLogin }) {
         }
     };
 
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
 
         if (!validateEmail(email)) {
             setIsEmailValid(false);
             setEmailError("Введите корректный email");
+            setIsLoading(false);
             return;
         }
 
@@ -100,12 +104,14 @@ export default function Registration({ onLogin }) {
             if (password !== passwordRepeat) {
                 setPasswordError("Пароли не совпадают");
                 setIsFormValid(false);
+                setIsLoading(false);
                 return;
             }
 
             if (password.length < 6) {
                 setPasswordError("Пароль должен быть не менее 6 символов");
                 setIsFormValid(false);
+                setIsLoading(false);
                 return;
             }
         }
@@ -113,21 +119,34 @@ export default function Registration({ onLogin }) {
         if (!isRegistration && password.length < 6) {
             setPasswordError("Пароль должен быть не менее 6 символов");
             setIsFormValid(false);
+            setIsLoading(false);
             return;
         }
 
         console.log("Email:", email);
         console.log("Password:", password);
-        if (isRegistration) {
-            console.log("Регистрация нового пользователя");
-        } else {
-            console.log("Вход пользователя");
-        }
 
-        setTimeout(() => {
-            onLogin();
-        }, 500);
+        try {
+            let success;
+            if (isRegistration) {
+                console.log("Регистрация нового пользователя");
+                success = await onRegister(email, password);
+            } else {
+                console.log("Вход пользователя");
+                success = await onLogin(email, password);
+            }
+
+            if (!success) {
+                alert("Ошибка авторизации. Проверьте email и пароль.");
+            }
+        } catch (error) {
+            console.error("Ошибка:", error);
+            alert(error.message || "Произошла ошибка. Попробуйте еще раз.");
+        } finally {
+            setIsLoading(false);
+        }
     };
+
 
     return (
         <main className='registration-main'>
@@ -143,6 +162,7 @@ export default function Registration({ onLogin }) {
                             id='signin-button'
                             className={`signin-button ${!isRegistration ? 'active' : ''}`}
                             onClick={handleSignInClick}
+                            disabled={isLoading}
                         >
                             Вход
                         </button>
@@ -151,6 +171,7 @@ export default function Registration({ onLogin }) {
                             id='reg-button'
                             className={`reg-button ${isRegistration ? 'active' : ''}`}
                             onClick={handleRegistrationClick}
+                            disabled={isLoading}
                         >
                             Регистрация
                         </button>
@@ -164,6 +185,7 @@ export default function Registration({ onLogin }) {
                         value={email}
                         onChange={handleEmailChange}
                         required
+                        disabled={isLoading}
                     />
                     {!isEmailValid && emailError && (
                         <div className="error-message">{emailError}</div>
@@ -177,6 +199,7 @@ export default function Registration({ onLogin }) {
                         value={password}
                         onChange={handlePasswordChange}
                         required
+                        disabled={isLoading}
                     />
 
                     {isRegistration && (
@@ -188,6 +211,7 @@ export default function Registration({ onLogin }) {
                             value={passwordRepeat}
                             onChange={handlePasswordRepeatChange}
                             required
+                            disabled={isLoading}
                         />
                     )}
 
@@ -199,9 +223,9 @@ export default function Registration({ onLogin }) {
                         id='sign-in-button'
                         className='sign-in-button'
                         type="submit"
-                        disabled={!isFormValid}
+                        disabled={isFormValid || isLoading}
                     >
-                        {isRegistration ? 'Зарегистрироваться' : 'Войти'}
+                        {isLoading ? 'Загрузка...' : isRegistration ? 'Зарегистрироваться' : 'Войти'}
                     </button>
 
                     <img

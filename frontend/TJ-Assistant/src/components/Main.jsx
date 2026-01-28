@@ -11,7 +11,7 @@ export default function Main() {
     const [currentChatId, setCurrentChatId] = useState(null);
     const textareaRef = useRef(null);
 
-    const API_BASE_URL = "http://localhost:8000";
+    const API_BASE_URL = "http://localhost:8000/api";
 
     const adjustTextareaHeight = () => {
         const textarea = textareaRef.current;
@@ -29,7 +29,7 @@ export default function Main() {
 
     const sendMessageToServer = async (content, chatId = null) => {
         try {
-            const token = localStorage.getItem("auth_token");
+            const token = localStorage.getItem("authToken");
             const headers = {
                 "Content-Type": "application/json",
             };
@@ -40,8 +40,17 @@ export default function Main() {
 
             const requestBody = {
                 content: content,
-                chat_id: chatId
             };
+
+            if (chatId) {
+                requestBody.chat_id = chatId;
+            }
+
+            console.log("Отправка запроса на /chat:", {
+                url: `${API_BASE_URL}/chat`,
+                headers,
+                body: requestBody
+            });
 
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: "POST",
@@ -53,10 +62,24 @@ export default function Main() {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("Ошибка сервера:", response.status, errorText);
-                throw new Error(`Ошибка: ${response.status}`);
+
+                let errorMessage = `Ошибка: ${response.status}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.detail) {
+                        errorMessage = errorJson.detail;
+                    }
+                } catch (e) {
+                    if (errorText) {
+                        errorMessage = errorText;
+                    }
+                }
+
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
+            console.log("Ответ от сервера:", data);
             return data;
         } catch (error) {
             console.error("Ошибка при отправке сообщения:", error);
@@ -95,14 +118,16 @@ export default function Main() {
 
             setMessages(prev => [...prev, assistantMessage]);
 
-            if (!currentChatId && response.chat_created) {
+            if (response.chat_created && !currentChatId) {
                 setCurrentChatId(response.chat_created);
+                console.log("Создан новый чат с ID:", response.chat_created);
             }
         } catch (error) {
+            console.error("Полная ошибка:", error);
             const errorMessage = {
                 id: `error-${Date.now()}`,
                 type: "assistant",
-                text: "Извините, произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз.",
+                text: `Извините, произошла ошибка: ${error.message}. Пожалуйста, попробуйте еще раз.`,
                 timestamp: new Date().toISOString(),
                 isError: true
             };
@@ -138,38 +163,6 @@ export default function Main() {
                 console.error('Ошибка при копировании текста: ', err);
             });
     };
-
-    const createNewChat = async () => {
-        try {
-            const token = localStorage.getItem("auth_token");
-            const headers = {
-                "Content-Type": "application/json",
-            };
-
-            if (token) {
-                headers["Authorization"] = `Bearer ${token}`;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/new-chat`, {
-                method: "POST",
-                headers: headers,
-                credentials: "include"
-            });
-
-            if (!response.ok) {
-                throw new Error(`Ошибка: ${response.status}`);
-            }
-
-            const data = await response.json();
-            setCurrentChatId(data.chat_id);
-            setMessages([]); // Очищаем сообщения при создании нового чата
-        } catch (error) {
-            console.error("Ошибка при создании нового чата:", error);
-        }
-    };
-
-    useEffect(() => {
-    }, [currentChatId]);
 
     return (
         <main className="main">
