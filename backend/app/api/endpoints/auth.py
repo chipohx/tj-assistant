@@ -3,12 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import Select
 
-from app.api.schemas.schemas import Token, UserSchema
+from app.api.schemas.schemas import Token
 from app.core.secuirity import create_token, decode_token
 from app.core.user import (
     authenticate_user,
-    get_current_active_user,
     get_user,
     create_user,
 )
@@ -16,17 +16,11 @@ from app.database.session_async import get_db
 from app.mailing.send_verification_email import send_verification_email
 from app.models.models import User
 
+# Удалить
+from app.core.secuirity import get_password_hash
+
 
 router = APIRouter()
-
-
-@router.get("/users/me")
-async def read_users_me(
-    current_user: Annotated[UserSchema, Depends(get_current_active_user)],
-):
-    """Скрыто принимает параметр request, который должен содержать заголовок Authorization"""
-
-    return current_user
 
 
 @router.post("/auth/login")
@@ -69,19 +63,36 @@ async def register(
     await send_verification_email(email)
     return {"detail": "Account created successfully", "email": email}
 
+<<<<<<< Updated upstream
+=======
+
+@router.post("/auth/test-register")
+async def test_register(db: AsyncSession = Depends(get_db)):
+    """Создает тестового пользователя для разработки"""
+
+    test_user = db.scalar(Select(User).where(User.email == "test@test.com"))
+    if not test_user:
+        new_user = User(
+            email="test@test.com",
+            password=get_password_hash("password123"),
+            activated=True,
+        )
+        db.add(new_user)
+        db.commit()
+        return {"detail": "Test user created", "email": "test@test.com"}
+    return {"detail": "Test user already exists"}
+
+>>>>>>> Stashed changes
 
 @router.post("/auth/request-verify-token", status_code=status.HTTP_202_ACCEPTED)
 async def request_verify_token(
     email: str = Body(..., embed=True), db: AsyncSession = Depends(get_db)
 ):
     """Заново посылает уведомление для верификации на почту"""
+
     user: User = await get_user(email, db)
-    if user:
-        if not user.activated:
-            await send_verification_email(email)
-        else:
-            # TODO Заменить на логгер
-            print("Пользователь уже верифицирован")
+    if user and not user.activated:
+        await send_verification_email(email)
     return None
 
 
@@ -93,8 +104,6 @@ async def verify_account(token: str, db: AsyncSession = Depends(get_db)):
     email = decode_token(token)
 
     user: User = await get_user(email, db)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
 
     if user.activated:
         raise HTTPException(status_code=400, detail="Email already verified")

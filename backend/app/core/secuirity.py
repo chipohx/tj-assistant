@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from jwt.exceptions import DecodeError, ExpiredSignatureError, InvalidTokenError
 from pwdlib import PasswordHash
 
@@ -15,9 +15,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 password_hash = PasswordHash.recommended()
 
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # pwdlib.exceptions.UnknownHashError
     return password_hash.verify(plain_password, hashed_password)
 
 
@@ -47,7 +52,6 @@ def decode_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
-        print(username)
 
         if not username:
             raise HTTPException(status_code=400, detail="Invalid token")
@@ -57,5 +61,8 @@ def decode_token(token: str):
         raise HTTPException(status_code=400, detail="Token expired")
     except InvalidTokenError:
         raise HTTPException(status_code=400, detail="Invalid token")
+    except Exception as e:
+        print(f"JWT error: {e}")
+        raise credentials_exception
 
     return username
