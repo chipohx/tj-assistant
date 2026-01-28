@@ -9,11 +9,6 @@ from app.core.secuirity import verify_password, decode_token, get_password_hash
 from app.database.session_async import get_db
 from app.models.models import User
 
-# credentials_exception = HTTPException(
-#     status_code=status.HTTP_401_UNAUTHORIZED,
-#     detail="Could not validate credentials",
-#     headers={"WWW-Authenticate": "Bearer"},
-# )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -44,7 +39,7 @@ async def get_user(username: str, db: AsyncSession) -> User | None:
 
 async def authenticate_user(db: AsyncSession, username: str, password: str):
     """Проверяет пароль и email пользователя,
-    а также факт верификации аккауета
+    а также факт верификации аккаунта
     """
 
     user = await get_user(username, db)
@@ -63,9 +58,6 @@ async def get_current_user(
     если заголовок запроса не содержит токена авторазации, соответствие токена
     выданному системой проверяется ниже"""
 
-<<<<<<< Updated upstream
-=======
-    # ВРЕМЕННОЕ РЕШЕНИЕ: для тестирования без реальной авторизации
     # Проверяем, есть ли пользователь в базе
     if token == "example-token":
         # Ищем пользователя в базе (создадим его если нет)
@@ -84,7 +76,6 @@ async def get_current_user(
             db.refresh(user)
         return user
 
->>>>>>> Stashed changes
     username = decode_token(token)
     user = await get_user(username, db)
 
@@ -95,7 +86,6 @@ async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     """Проверяем верификацию аккаунта"""
-
     if not current_user.activated:
         raise HTTPException(status_code=403, detail="Unverified user")
     return current_user

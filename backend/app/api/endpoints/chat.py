@@ -23,6 +23,30 @@ from app.models.models import Chat, Message, Role, User
 from app.services.llm import request_llm_response
 
 
+# def create_message_in_db(db: Session, content: str, role: Role, chat_id: UUID) -> UUID:
+#     try:
+#         new_message = Message(chat_id=chat_id, content=content, role=role)
+#         db.add(new_message)
+#         db.commit()
+#         db.refresh(new_message)
+#         return new_message.id
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to create message")
+
+
+# def create_chat(db: Session, title: str, user: User):
+#     try:
+#         new_chat = Chat(title=title, user_id=user.id)
+#         db.add(new_chat)
+#         db.commit()
+#         db.refresh(new_chat)
+#         return new_chat.id
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to create chat")
+        
+        
 router = APIRouter()
 
 
@@ -48,7 +72,10 @@ async def send_message(
     else:
         chat_id = request.chat_id
 
-    await create_message(db, request.content, Role.USER, chat_id)
+    try:
+        await create_message(db, request.content, Role.USER, chat_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save user message: {str(e)}")
 
     # response_content = await request_llm_response(request.content)
 
@@ -66,6 +93,18 @@ async def send_message(
         content=response_content,
         timestamp=datetime.now(),
         chat_created=chat_id,
+    )
+
+    try:
+        assistant_message_id = create_message_in_db(db, response_content, Role.SYSTEM, chat_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save assistant message: {str(e)}")
+
+    return ChatResponse(
+        message_id=assistant_message_id,
+        content=response_content,
+        timestamp=datetime.now(),
+        chat_created=chat_created,
     )
 
 

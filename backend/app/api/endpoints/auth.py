@@ -63,14 +63,6 @@ async def register(
     await send_verification_email(email)
     return {"detail": "Account created successfully", "email": email}
 
-<<<<<<< Updated upstream
-=======
-
-@router.post("/auth/test-register")
-async def test_register(db: AsyncSession = Depends(get_db)):
-    """Создает тестового пользователя для разработки"""
-
-    test_user = db.scalar(Select(User).where(User.email == "test@test.com"))
     if not test_user:
         new_user = User(
             email="test@test.com",
@@ -82,7 +74,6 @@ async def test_register(db: AsyncSession = Depends(get_db)):
         return {"detail": "Test user created", "email": "test@test.com"}
     return {"detail": "Test user already exists"}
 
->>>>>>> Stashed changes
 
 @router.post("/auth/request-verify-token", status_code=status.HTTP_202_ACCEPTED)
 async def request_verify_token(
