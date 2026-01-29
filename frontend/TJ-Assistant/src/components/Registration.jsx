@@ -223,7 +223,7 @@ export default function Registration({ onLogin, onRegister }) {
                         id='sign-in-button'
                         className='sign-in-button'
                         type="submit"
-                        disabled={isFormValid || isLoading}
+                        disabled={!isFormValid || isLoading}
                     >
                         {isLoading ? 'Загрузка...' : isRegistration ? 'Зарегистрироваться' : 'Войти'}
                     </button>
