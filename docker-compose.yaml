@@ -54,6 +54,7 @@ services:
       QDRANT_URL: http://qdrant:6333
       QDRANT_COLLECTION: tj
       HF_HOME: /hf_cache
+      EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large
     env_file:
       - ./tj-ml/.env
     volumes:
@@ -78,6 +79,7 @@ services:
       QDRANT_URL: http://qdrant:6333
       QDRANT_COLLECTION: tj
       HF_HOME: /hf_cache
+      EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large
     env_file:
       - ./tj-ml/.env
     volumes:

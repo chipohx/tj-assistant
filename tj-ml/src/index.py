@@ -15,7 +15,7 @@ load_dotenv()
 # URL для подключения к Qdrant (по умолчанию локальный)
 QDRANT_URL = os.getenv('QDRANT_URL', 'http://localhost:6333')
 COLLECTION_NAME = os.getenv('QDRANT_COLLECTION', 'tj')
-EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL_NAME', 'sentence-transformers/all-MiniLM-L6-v2')
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL_NAME', 'intfloat/multilingual-e5-large')
 
 
 def load_articles_from_json(file_path):
