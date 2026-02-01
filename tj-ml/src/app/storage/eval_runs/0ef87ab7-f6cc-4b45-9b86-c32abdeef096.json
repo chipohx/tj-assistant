@@ -1,0 +1,11 @@
+{
+  "run_id": "0ef87ab7-f6cc-4b45-9b86-c32abdeef096",
+  "run_name": "trevoga1",
+  "status": "failed",
+  "started_at": "2026-01-21T16:00:50.043119+00:00",
+  "finished_at": "2026-01-21T16:00:50.065880+00:00",
+  "metrics": {},
+  "items": [],
+  "error": "Expecting value: line 2 column 3 (char 4)",
+  "embedding_model": "intfloat/multilingual-e5-small"
+}

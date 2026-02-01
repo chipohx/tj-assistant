@@ -28,12 +28,14 @@ class NewChat(BaseModel):
 
 
 class MessageSchema(BaseModel):
+    message_id: UUID
     content: str
     created: datetime
     role: Role
 
 
 class ChatResponse(BaseModel):
+    message_id: UUID
     content: str
     timestamp: datetime
     chat_created: UUID | None

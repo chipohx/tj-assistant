@@ -1,0 +1,30 @@
+{
+  "run_id": "0ecada11-e6cc-4dce-a258-df2f2fac0e61",
+  "run_name": "second_run",
+  "status": "completed",
+  "started_at": "2026-01-21T15:33:09.379145+00:00",
+  "finished_at": "2026-01-21T15:33:10.903721+00:00",
+  "metrics": {
+    "count": 2,
+    "exact_match_avg": 0.0,
+    "f1_avg": 0.058823529411764705
+  },
+  "items": [
+    {
+      "question": "Куда можно сходить в Питере?",
+      "expected_answer": "Можно посетить Эрмитаж, Исаакиевский собор или прогуляться по Невскому проспекту.",
+      "predicted_answer": "Можно сходить в Арт-музу и Музей хлеба.",
+      "exact_match": 0.0,
+      "f1": 0.11764705882352941
+    },
+    {
+      "question": "Что такое TJ?",
+      "expected_answer": "TJ — это медиа о технологиях, интернете и городских темах.",
+      "predicted_answer": "Не знаю.",
+      "exact_match": 0.0,
+      "f1": 0.0
+    }
+  ],
+  "error": null,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+}

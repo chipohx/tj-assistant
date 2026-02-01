@@ -1,0 +1,11 @@
+requests 
+python-dotenv
+langchain-gigachat
+qdrant-client
+langchain-qdrant
+langchain>=0.3.0,<0.4.0
+sentence-transformers
+langchain-huggingface
+langchain-core>=0.3.72,<0.4.0
+fastapi
+uvicorn

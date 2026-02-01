@@ -1,39 +1,51 @@
+import os
 import httpx
 from fastapi import HTTPException
 
 
-async def request_llm_response(message: str):
+ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://ml:8001")
+
+
+async def request_llm_response(message: str) -> str:
+    """
+    Send a message to the ML RAG service and get a response.
+    """
     async with httpx.AsyncClient() as client:
         try:
-            health_check = await client.get("http://main:8001/health", timeout=30.0)
-
-            if health_check.status_code != 200:
-                print(f"Health check failed: {health_check.status_code}")
-                raise HTTPException(
-                    status_code=503,
-                    detail=f"LLM service health check failed: {health_check.text}",
-                )
-
+            # Call the RAG query endpoint
             response = await client.post(
-                "http://main:8001/llm_response",
-                json={"query": message},
-                timeout=60.0,
+                f"{ML_SERVICE_URL}/rag/query",
+                json={"question": message, "top_k": 5},
+                timeout=120.0,
             )
         except httpx.RequestError as e:
-            print(f"Ошибка сети: {e}")
-            raise HTTPException(status_code=500, detail="LLM service unreachable")
+            print(f"Network error: {e}")
+            raise HTTPException(
+                status_code=503,
+                detail="ML service is unavailable. Please try again later."
+            )
 
     if response.status_code != 200:
-        raise HTTPException(status_code=502, detail="Failed generating response")
+        print(f"ML service error: {response.status_code} - {response.text}")
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to get response from ML service"
+        )
 
     try:
-        response_dict = response.json()
+        response_data = response.json()
     except ValueError:
-        raise HTTPException(status_code=502, detail="Invalid JSON from LLM service")
+        raise HTTPException(
+            status_code=502,
+            detail="Invalid response from ML service"
+        )
 
-    response_message = response_dict["response"]
+    answer = response_data.get("answer", "")
+    
+    if not answer:
+        raise HTTPException(
+            status_code=502,
+            detail="Empty response from ML service"
+        )
 
-    if not response_message:
-        raise HTTPException(status_code=502, detail="Empty response from LLM service")
-
-    return response_message
+    return answer
