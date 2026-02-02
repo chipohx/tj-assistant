@@ -119,20 +119,31 @@ curl -s http://localhost:6333/collections/tj | grep points_count
 
 ### 5. Накатить миграции в БД
 
-Запустить контейнеры Backend и Postgres
-В терминале, находясь в папке с проектом написать: 
-1) docker compose exec backend bash (откроет терминал внутри контейнера)
-2) alembic init migrations
+Запустить контейнеры Backend и Postgres.
+В терминале, находясь в папке с проектом написать (откроет терминал внутри контейнера): 
+```bash
+docker compose exec backend bash
+alembic init migrations
+```
+
 В папке проекта появится папка migrations, в ней в файле env.py:
 1) Добавить строку from app.models.models import Base
 2) Заменить строку target_metadata = None на target_metadata = Base.metadata
+
 Далее снова в терминале (внутри контейнера):
-1) alembic revision --autogenerate -m "Init"
-2) alembic upgrade head
+```bash
+alembic revision --autogenerate -m "Init"
+alembic upgrade head
+```
+
 
 Если возникнет проблема с применением миграций следует:
-1) В терминале: docker compose exec backend bash (если ещё не внутри контейнера)
+1) В терминале (если ещё не внутри контейнера):
+```bash
+docker compose exec backend bash
+```
 2) Далее ввести команду (она очистит информацию о миграциях):
+```bash
 python -c "
 import asyncio
 from sqlalchemy import text
@@ -143,8 +154,10 @@ async def reset():
         await conn.execute(text('DROP TABLE IF EXISTS alembic_version'))
         await conn.commit()
 
-asyncio.run(reset())
-"
+asyncio.run(reset())"
+```
+
+
 Или если не помогло:
 Удалить в Docker volume с названием tj_assistant_postgres_data
 
