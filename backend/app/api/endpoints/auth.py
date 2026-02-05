@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.schemas import Token
-from app.core.secuirity import create_token, decode_token
+from app.core.secuirity import create_token, decode_token, get_password_hash
 from app.core.user import (
     authenticate_user,
     get_user,
@@ -44,7 +44,20 @@ async def test_register(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: AsyncSession = Depends(get_db),
 ):
-    await create_user(db, form_data.username, form_data.password)
+    await create_user_activated(db, form_data.username, form_data.password)
+
+async def create_user_activated(db: AsyncSession, email: str, password: str):
+    """Создание пользователя"""
+
+    try:
+        new_user = User(email=email, password=get_password_hash(password), activated=True)
+        db.add(new_user)
+
+        await db.commit()
+        await db.refresh(new_user)
+    except Exception as e:
+        await db.rollback()
+        print(f"Couldn't create user: {e}")
 
 
 @router.post("/auth/register")
