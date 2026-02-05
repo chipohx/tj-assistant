@@ -5,9 +5,18 @@ import chats from "../assets/images/chats.png";
 import plus from "../assets/images/plus.png";
 import profilelogo from "../assets/images/account.png";
 
-export default function Header() {
+export default function Header({ onLogout, userEmail }) {
     const [showHelp, setShowHelp] = useState(false);
     const [showChatHistory, setShowChatHistory] = useState(false);
+
+    const getNicknameFromEmail = () => {
+        if (!userEmail) return "Пользователь";
+        const atIndex = userEmail.indexOf('@');
+        if (atIndex === -1) return userEmail;
+        return userEmail.substring(0, atIndex);
+    };
+
+    const nickname = getNicknameFromEmail();
 
     const toggleHelp = () => {
         setShowHelp(!showHelp);
@@ -23,6 +32,12 @@ export default function Header() {
 
     const closeChatHistory = () => {
         setShowChatHistory(false);
+    };
+
+    const handleLogoutClick = () => {
+        if (onLogout) {
+            onLogout();
+        }
     };
 
     return (
@@ -101,9 +116,13 @@ export default function Header() {
                                     <span className="chat-history-points">...</span>
                                 </div>
                             </div>
-                            <button className="nickname-button">
+                            <button
+                                className="nickname-button"
+                                onClick={handleLogoutClick}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 <img className="profile-icon" src={profilelogo} alt="Профиль" />
-                                <span className="nick">Никнейм</span>
+                                <span className="nick">{nickname}</span>
                                 <span className="nickname-points">...</span>
                             </button>
                         </div>

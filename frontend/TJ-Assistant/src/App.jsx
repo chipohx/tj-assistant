@@ -80,7 +80,10 @@ function App() {
         <>
             {isLoggedIn ? (
                 <>
-                    <Header onLogout={handleLogout} />
+                    <Header
+                        onLogout={handleLogout}
+                        userEmail={localStorage.getItem("userEmail")}
+                    />
                     <Main />
                 </>
             ) : (
