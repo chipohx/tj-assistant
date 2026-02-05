@@ -56,7 +56,7 @@ services:
       HF_HOME: /hf_cache
       EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large
     env_file:
-      - ./tj-ml/.env
+      - .env
     volumes:
       - hf_cache:/hf_cache
     networks:
@@ -81,7 +81,7 @@ services:
       HF_HOME: /hf_cache
       EMBEDDING_MODEL_NAME: intfloat/multilingual-e5-large
     env_file:
-      - ./tj-ml/.env
+      - .env
     volumes:
       - hf_cache:/hf_cache
     networks:
@@ -113,7 +113,7 @@ services:
       DB_HOST: postgres
       ML_SERVICE_URL: http://ml:8001
     env_file:
-    - ./backend/.env
+    - .env
     volumes:
       - ./backend/app:/project/app
       - ./backend/migrations:/project/migrations
