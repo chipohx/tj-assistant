@@ -13,11 +13,11 @@ from app.models.models import User
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
-async def create_user(db: AsyncSession, email: str, password: str):
+async def create_user(db: AsyncSession, email: str, password: str, activated: bool = False):
     """Создание пользователя"""
 
     try:
-        new_user = User(email=email, password=get_password_hash(password))
+        new_user = User(email=email, password=get_password_hash(password), activated=activated)
         db.add(new_user)
 
         await db.commit()
@@ -42,6 +42,8 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
 
     user = await get_user(username, db)
 
+    if not user:
+        raise HTTPException(status_code=403, detail="User doesn't exist")
     if not user.activated:
         raise HTTPException(status_code=403, detail="Unverified user")
     if not verify_password(password, user.password):

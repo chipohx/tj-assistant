@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
 from app.api.schemas.schemas import Token
-from app.core.secuirity import create_token, decode_token, get_password_hash
+from app.core.secuirity import create_token, decode_token
 from app.core.user import (
     authenticate_user,
     get_user,
@@ -44,20 +45,7 @@ async def test_register(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: AsyncSession = Depends(get_db),
 ):
-    await create_user_activated(db, form_data.username, form_data.password)
-
-async def create_user_activated(db: AsyncSession, email: str, password: str):
-    """Создание пользователя"""
-
-    try:
-        new_user = User(email=email, password=get_password_hash(password), activated=True)
-        db.add(new_user)
-
-        await db.commit()
-        await db.refresh(new_user)
-    except Exception as e:
-        await db.rollback()
-        print(f"Couldn't create user: {e}")
+    await create_user(db, form_data.username, form_data.password, activated=True)
 
 
 @router.post("/auth/register")
@@ -116,3 +104,32 @@ async def verify_account(token: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to activate account")
 
     return {"message": "Email successfully verified"}
+
+
+@router.delete("/test/users/delete-all-cascade", summary="Удалить всех пользователей каскадно")
+async def delete_all_users_cascade(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Удаляет всех пользователей с каскадным удалением связанных данных (только для теста)
+    """
+
+    try:
+        sql = """
+        TRUNCATE TABLE "user" CASCADE;
+        """
+        
+        await db.execute(text(sql))
+        await db.commit()
+        
+        return {
+            "status": "success",
+            "message": "Все пользователи и связанные данные удалены каскадно"
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при каскадном удалении: {str(e)}"
+        )
