@@ -11,20 +11,42 @@ function App() {
 
     const handleLogin = async (email, password) => {
         try {
-            const formData = new FormData();
+            const formData = new URLSearchParams();
             formData.append('username', email);
             formData.append('password', password);
 
+            console.log("📤 Отправка запроса на логин:", email);
+            console.log("URL:", 'http://localhost:8000/api/auth/login');
+
             const response = await fetch('http://localhost:8000/api/auth/login', {
                 method: 'POST',
-                body: formData,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString(),
             });
 
+            const responseText = await response.text();
+            console.log("Статус ответа:", response.status);
+            console.log("Текст ответа:", responseText);
+
             if (!response.ok) {
-                throw new Error('Ошибка авторизации');
+                let errorMessage = 'Ошибка авторизации';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.detail || errorMessage;
+                } catch (e) {
+                    errorMessage = responseText || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
 
-            const data = await response.json();
+            const data = JSON.parse(responseText);
+            console.log("✅ Данные ответа:", data);
+
+            if (!data.access_token) {
+                throw new Error('Токен не получен');
+            }
 
             localStorage.setItem("authToken", data.access_token);
             localStorage.setItem("userEmail", email);
@@ -32,41 +54,59 @@ function App() {
 
             return true;
         } catch (error) {
-            console.error('Ошибка входа:', error);
-
-            localStorage.setItem("authToken", "example-token");
-            localStorage.setItem("userEmail", email);
-            setIsLoggedIn(true);
-
-            return true;
+            console.error('❌ Ошибка входа:', error.message);
+            alert(`Ошибка входа: ${error.message}`);
+            return false;
         }
     };
 
     const handleRegister = async (email, password) => {
         try {
-            const formData = new FormData();
+            const formData = new URLSearchParams();
             formData.append('username', email);
             formData.append('password', password);
 
+            console.log("📤 Отправка запроса на регистрацию:", email);
+            console.log("URL:", 'http://localhost:8000/api/auth/register');
+
             const response = await fetch('http://localhost:8000/api/auth/register', {
                 method: 'POST',
-                body: formData,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString(),
             });
 
+            const responseText = await response.text();
+            console.log("Статус ответа:", response.status);
+            console.log("Текст ответа:", responseText);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Ошибка регистрации');
+                let errorMessage = 'Ошибка регистрации';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.detail || errorMessage;
+                } catch (e) {
+                    errorMessage = responseText || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
 
-            return await handleLogin(email, password);
+            const data = JSON.parse(responseText);
+            console.log("✅ Данные регистрации:", data);
+
+            const loginSuccess = await handleLogin(email, password);
+
+            if (loginSuccess) {
+                alert('Регистрация и вход выполнены успешно!');
+                return true;
+            } else {
+                throw new Error('Не удалось выполнить вход после регистрации');
+            }
         } catch (error) {
-            console.error('Ошибка регистрации:', error);
-
-            localStorage.setItem("authToken", "example-token");
-            localStorage.setItem("userEmail", email);
-            setIsLoggedIn(true);
-
-            return true;
+            console.error('❌ Ошибка регистрации:', error.message);
+            alert(`Ошибка регистрации: ${error.message}\n\nПопробуйте использовать другой email.`);
+            return false;
         }
     };
 
