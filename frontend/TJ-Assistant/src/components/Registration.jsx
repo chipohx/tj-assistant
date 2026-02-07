@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import logo from "../assets/images/robot.png";
 
 export default function Registration({ onLogin, onRegister }) {
@@ -9,19 +9,23 @@ export default function Registration({ onLogin, onRegister }) {
     const [isEmailValid, setIsEmailValid] = useState(true);
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
-    const [isFormValid, setIsFormValid] = useState(true);
+    const [isFormValid, setIsFormValid] = useState(false); // Изменено на false по умолчанию
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        validateForm();
+    }, [email, password, passwordRepeat, isRegistration]);
 
     const handleRegistrationClick = () => {
         setIsRegistration(true);
         setPasswordError("");
-        setIsFormValid(true);
+        setPasswordRepeat(""); // Сброс повторного пароля
     };
 
     const handleSignInClick = () => {
         setIsRegistration(false);
         setPasswordError("");
-        setIsFormValid(true);
+        setPasswordRepeat(""); // Сброс повторного пароля
     };
 
     const handleEmailChange = (e) => {
@@ -40,32 +44,45 @@ export default function Registration({ onLogin, onRegister }) {
                 setEmailError("");
             }
         }
-        validateForm();
     };
 
     const handlePasswordChange = (e) => {
         const value = e.target.value;
         setPassword(value);
-        if (isRegistration && passwordRepeat && value !== passwordRepeat) {
-            setPasswordError("Пароли не совпадают");
-        } else {
+
+        if (passwordError && isRegistration && value === passwordRepeat) {
             setPasswordError("");
         }
-        validateForm();
     };
 
     const handlePasswordRepeatChange = (e) => {
         const value = e.target.value;
         setPasswordRepeat(value);
 
-        if (isRegistration) {
-            if (password && value !== password) {
-                setPasswordError("Пароли не совпадают");
-            } else {
-                setPasswordError("");
-            }
+        if (passwordError && value === password) {
+            setPasswordError("");
         }
-        validateForm();
+    };
+
+    const handleEmailBlur = (e) => {
+        const value = e.target.value;
+        if (value !== email) {
+            setEmail(value);
+        }
+    };
+
+    const handlePasswordBlur = (e) => {
+        const value = e.target.value;
+        if (value !== password) {
+            setPassword(value);
+        }
+    };
+
+    const handlePasswordRepeatBlur = (e) => {
+        const value = e.target.value;
+        if (value !== passwordRepeat) {
+            setPasswordRepeat(value);
+        }
     };
 
     const validateEmail = (email) => {
@@ -74,65 +91,78 @@ export default function Registration({ onLogin, onRegister }) {
     };
 
     const validateForm = () => {
-        if (isRegistration) {
-            const emailValid = validateEmail(email);
-            const passwordsMatch = password === passwordRepeat;
-            const passwordsNotEmpty = password && passwordRepeat;
+        const emailValid = validateEmail(email);
+        setIsEmailValid(emailValid);
 
-            setIsFormValid(emailValid && passwordsMatch && passwordsNotEmpty);
+        if (!emailValid && email) {
+            setEmailError("Введите корректный email");
         } else {
-            const emailValid = validateEmail(email);
-            const passwordNotEmpty = password.length > 0;
+            setEmailError("");
+        }
 
-            setIsFormValid(emailValid && passwordNotEmpty);
+        if (isRegistration) {
+            const passwordsNotEmpty = password && passwordRepeat;
+            const passwordsMatch = password === passwordRepeat;
+            const passwordValid = password.length >= 6;
+
+            if (passwordsNotEmpty && !passwordsMatch) {
+                setPasswordError("Пароли не совпадают");
+            } else if (password && password.length < 6) {
+                setPasswordError("Пароль должен быть не менее 6 символов");
+            } else {
+                setPasswordError("");
+            }
+
+            setIsFormValid(emailValid && passwordsNotEmpty && passwordsMatch && passwordValid);
+        } else {
+            const passwordValid = password.length >= 6;
+
+            if (password && password.length < 6) {
+                setPasswordError("Пароль должен быть не менее 6 символов");
+            } else {
+                setPasswordError("");
+            }
+
+            setIsFormValid(emailValid && passwordValid);
         }
     };
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
 
-        if (!validateEmail(email)) {
-            setIsEmailValid(false);
-            setEmailError("Введите корректный email");
-            setIsLoading(false);
+        validateForm();
+
+        if (!isFormValid) {
             return;
         }
+
+        setIsLoading(true);
 
         if (isRegistration) {
             if (password !== passwordRepeat) {
                 setPasswordError("Пароли не совпадают");
-                setIsFormValid(false);
                 setIsLoading(false);
                 return;
             }
 
             if (password.length < 6) {
                 setPasswordError("Пароль должен быть не менее 6 символов");
-                setIsFormValid(false);
+                setIsLoading(false);
+                return;
+            }
+        } else {
+            if (password.length < 6) {
+                setPasswordError("Пароль должен быть не менее 6 символов");
                 setIsLoading(false);
                 return;
             }
         }
 
-        if (!isRegistration && password.length < 6) {
-            setPasswordError("Пароль должен быть не менее 6 символов");
-            setIsFormValid(false);
-            setIsLoading(false);
-            return;
-        }
-
-        console.log("Email:", email);
-        console.log("Password:", password);
-
         try {
             let success;
             if (isRegistration) {
-                console.log("Регистрация нового пользователя");
                 success = await onRegister(email, password);
             } else {
-                console.log("Вход пользователя");
                 success = await onLogin(email, password);
             }
 
@@ -146,7 +176,6 @@ export default function Registration({ onLogin, onRegister }) {
             setIsLoading(false);
         }
     };
-
 
     return (
         <main className='registration-main'>
@@ -179,13 +208,15 @@ export default function Registration({ onLogin, onRegister }) {
 
                     <input
                         id='email-input'
-                        className={`email-input ${!isEmailValid ? 'invalid' : ''}`}
+                        className={`email-input ${!isEmailValid && email ? 'invalid' : ''}`}
                         placeholder='Введите Email'
                         type="email"
                         value={email}
                         onChange={handleEmailChange}
+                        onBlur={handleEmailBlur} // Добавлен onBlur
                         required
                         disabled={isLoading}
+                        autoComplete="email"
                     />
                     {!isEmailValid && emailError && (
                         <div className="error-message">{emailError}</div>
@@ -198,8 +229,10 @@ export default function Registration({ onLogin, onRegister }) {
                         type="password"
                         value={password}
                         onChange={handlePasswordChange}
+                        onBlur={handlePasswordBlur} // Добавлен onBlur
                         required
                         disabled={isLoading}
+                        autoComplete={isRegistration ? "new-password" : "current-password"}
                     />
 
                     {isRegistration && (
@@ -210,8 +243,10 @@ export default function Registration({ onLogin, onRegister }) {
                             type="password"
                             value={passwordRepeat}
                             onChange={handlePasswordRepeatChange}
+                            onBlur={handlePasswordRepeatBlur} // Добавлен onBlur
                             required
                             disabled={isLoading}
+                            autoComplete="new-password"
                         />
                     )}
 

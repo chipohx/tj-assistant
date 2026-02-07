@@ -759,7 +759,6 @@ h1 {
     color: #333;
 }
 
-/* Анимация появления */
 .chat-history-sidebar {
     animation: slideIn 0.3s ease-out;
 }
@@ -773,7 +772,6 @@ h1 {
     }
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .chat-history-sidebar {
         width: 100%;
