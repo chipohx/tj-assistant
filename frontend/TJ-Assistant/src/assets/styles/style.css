@@ -1,5 +1,5 @@
 body {
-    width: 1440px;
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -104,15 +104,34 @@ h1 {
     position: fixed;
     width: 100%;
     top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 214px;
-    overflow: auto;
+    left: 4px;
+    bottom: 0;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .messages-container {
     width: 850px;
     margin: 0 auto;
+    margin-bottom: 254px;
     display: flex;
     flex-direction: column;
 }
@@ -167,7 +186,7 @@ h1 {
     position: relative;
     max-width: 700px;
     width: fit-content;
-    padding: 20px 0;
+    /*padding: 20px 0;*/
     min-height: 65px;
     border-radius: 20px;
     background-color: white;
@@ -231,6 +250,7 @@ h1 {
     padding: 20px 17px;
     background-color: white;
     box-sizing: border-box;
+    z-index: 2;
 }
 
 .message-field {
@@ -1141,4 +1161,15 @@ h1 {
 .sign-in-button:disabled:hover {
     background-color: #cccccc !important;
     color: #666666 !important;
+}
+
+.cover-messages {
+    background-color: #ffffff;
+    position: fixed;
+    height: 50px;
+    width: 850px;
+    bottom: 0;
+    z-index: 1;
+    left: 50%;
+    transform: translateX(-50%);
 }

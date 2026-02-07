@@ -279,6 +279,7 @@ export default function Main() {
                     }}
                 ></button>
             </section>
+            <div className="cover-messages"></div>
         </main>
     );
 }
