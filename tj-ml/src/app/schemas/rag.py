@@ -16,6 +16,18 @@ class RAGQueryResponse(BaseModel):
     answer: str
     context: str
     sources: List[SourceDocument]
+    token_usage: Dict[str, int] = Field(
+        default_factory=dict,
+        description=(
+            "Детальная статистика использования токенов:\n"
+            "- query_tokens: токены из запроса пользователя\n"
+            "- context_tokens: токены из контекста RAG (векторная БД)\n"
+            "- prompt_tokens: общие входные токены (query + context + промпт)\n"
+            "- completion_tokens: токены ответа модели\n"
+            "- total_tokens: общее количество токенов\n"
+            "- successful_requests: количество успешных запросов"
+        )
+    )
 
 
 class RAGErrorResponse(BaseModel):
