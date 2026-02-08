@@ -24,22 +24,31 @@ app = FastAPI(title="RAG Evaluation API", version="0.1.0")
 @app.on_event("startup")
 def _startup() -> None:
     configure_logging()
+    settings = get_settings()
     logger.info("Initializing embeddings, vector store, and LLM...")
+    logger.info(f"LLM Provider: {settings.llm_provider}")
+    if settings.llm_provider == "openrouter":
+        logger.info(f"OpenRouter Model: {settings.openrouter_model}")
     get_embeddings()
     get_vector_store()
     get_llm()
     logger.info("Initialization complete.")
-    logger.info(get_settings().embedding_model_name)
+    logger.info(f"Embedding Model: {settings.embedding_model_name}")
 
 
 @app.post("/rag/query", response_model=RAGQueryResponse)
 def rag_query(payload: RAGQueryRequest) -> RAGQueryResponse:
-    answer, context, docs = query_rag(payload.question, top_k=payload.top_k)
+    answer, context, docs, token_usage = query_rag(payload.question, top_k=payload.top_k)
     sources = [
         SourceDocument(content=doc.page_content, metadata=doc.metadata or {})
         for doc in docs
     ]
-    return RAGQueryResponse(answer=answer, context=context, sources=sources)
+    return RAGQueryResponse(
+        answer=answer,
+        context=context,
+        sources=sources,
+        token_usage=token_usage
+    )
 
 
 @app.post("/eval/run", response_model=EvalRunResponse)

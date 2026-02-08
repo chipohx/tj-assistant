@@ -1,6 +1,7 @@
 requests 
 python-dotenv
 langchain-gigachat
+langchain-openai
 qdrant-client
 langchain-qdrant
 langchain>=0.3.0,<0.4.0
