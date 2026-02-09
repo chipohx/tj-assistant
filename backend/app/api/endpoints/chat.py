@@ -145,7 +145,7 @@ async def get_chat_sessions(
             "next_id": db_messages[-1].id if db_messages else None,
             "items": [
                 {
-                    "id": str(msg.id),
+                    "message_id": str(msg.id),
                     "content": msg.content,
                     "created": msg.created,
                     "role": msg.role.value,
