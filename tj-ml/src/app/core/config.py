@@ -14,6 +14,10 @@ class Settings:
     embedding_model_name: str
     eval_golden_path: str
     eval_runs_dir: str
+    # LLM provider settings
+    llm_provider: str
+    openrouter_api_key: str
+    openrouter_model: str
 
 
 def get_settings() -> Settings:
@@ -36,5 +40,11 @@ def get_settings() -> Settings:
         eval_runs_dir=os.getenv(
             "EVAL_RUNS_DIR",
             storage_dir,
+        ),
+        llm_provider=os.getenv("LLM_PROVIDER", "openrouter"),
+        openrouter_api_key=os.getenv("OPENAI_API_KEY", ""),
+        openrouter_model=os.getenv(
+            "OPENROUTER_MODEL",
+            "google/gemma-3-27b-it:free",
         ),
     )
