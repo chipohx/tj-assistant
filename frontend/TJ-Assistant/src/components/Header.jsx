@@ -5,9 +5,17 @@ import chats from "../assets/images/chats.png";
 import plus from "../assets/images/plus.png";
 import profilelogo from "../assets/images/account.png";
 
-export default function Header({ onLogout, userEmail }) {
+export default function Header({ onLogout, userEmail, showChatHistory, setShowChatHistory }) {
+    const [activeChatMenu, setActiveChatMenu] = useState(null);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [chatList, setChatList] = useState([
+        { id: 1, name: "Чат 5" },
+        { id: 2, name: "Чат 4" },
+        { id: 3, name: "Чат 3" },
+        { id: 4, name: "Чат 2" },
+        { id: 5, name: "Чат 1" }
+    ]);
     const [showHelp, setShowHelp] = useState(false);
-    const [showChatHistory, setShowChatHistory] = useState(false);
 
     const getNicknameFromEmail = () => {
         if (!userEmail) return "Пользователь";
@@ -28,10 +36,14 @@ export default function Header({ onLogout, userEmail }) {
 
     const toggleChatHistory = () => {
         setShowChatHistory(!showChatHistory);
+        setActiveChatMenu(null);
+        setShowProfileMenu(false);
     };
 
     const closeChatHistory = () => {
         setShowChatHistory(false);
+        setActiveChatMenu(null);
+        setShowProfileMenu(false);
     };
 
     const handleLogoutClick = () => {
@@ -39,6 +51,77 @@ export default function Header({ onLogout, userEmail }) {
             onLogout();
         }
     };
+
+    const handleChatPointsClick = (chatId, e) => {
+        e.stopPropagation();
+        setActiveChatMenu(activeChatMenu === chatId ? null : chatId);
+        setShowProfileMenu(false);
+    };
+
+    const handleProfilePointsClick = (e) => {
+        e.stopPropagation();
+        setShowProfileMenu(!showProfileMenu);
+        setActiveChatMenu(null);
+    };
+
+    const handleCreateNewChat = () => {
+        const maxId = chatList.reduce((max, chat) => Math.max(max, chat.id), 0);
+        const newChatId = maxId + 1;
+
+        const newChat = {
+            id: newChatId,
+            name: `Чат ${newChatId}`
+        };
+
+        setChatList(prev => [newChat, ...prev]);
+
+        setTimeout(() => {
+            const newName = prompt("Введите название для нового чата:", newChat.name);
+
+            if (newName && newName.trim() !== "") {
+                setChatList(prev =>
+                    prev.map(chat =>
+                        chat.id === newChatId ? { ...chat, name: newName.trim() } : chat
+                    )
+                );
+            }
+        }, 50);
+    };
+
+    const handleRenameChat = (chatId) => {
+        const newName = prompt("Введите новое название чата:",
+            chatList.find(chat => chat.id === chatId)?.name || "");
+
+        if (newName && newName.trim() !== "") {
+            setChatList(prevChats =>
+                prevChats.map(chat =>
+                    chat.id === chatId ? { ...chat, name: newName.trim() } : chat
+                )
+            );
+        }
+        setActiveChatMenu(null);
+    };
+
+    const handleDeleteChat = (chatId) => {
+        if (window.confirm("Вы уверены, что хотите удалить этот чат?")) {
+            setChatList(prevChats => prevChats.filter(chat => chat.id !== chatId));
+        }
+        setActiveChatMenu(null);
+    };
+
+    React.useEffect(() => {
+        const handleClickOutside = () => {
+            setActiveChatMenu(null);
+            setShowProfileMenu(false);
+        };
+
+        if (showChatHistory) {
+            document.addEventListener('click', handleClickOutside);
+            return () => {
+                document.removeEventListener('click', handleClickOutside);
+            };
+        }
+    }, [showChatHistory]);
 
     return (
         <>
@@ -59,8 +142,7 @@ export default function Header({ onLogout, userEmail }) {
                     />
                 </nav>
                 <div className="header-description">
-                    <h1 className="assistant-tj">Ассистент Т-Ж</h1>
-                    <a className="ai-expert">AI-эксперт по статьям</a>
+                    <h1 className="current-chat">Чат 1</h1>
                 </div>
                 <img
                     className="question-icon"
@@ -71,8 +153,8 @@ export default function Header({ onLogout, userEmail }) {
                 />
             </header>
             {showChatHistory && (
-                <div className="chat-history-overlay" onClick={closeChatHistory}>
-                    <div className="chat-history-sidebar" onClick={(e) => e.stopPropagation()}>
+                <div className="chat-history-sidebar">
+                    <div className="chat-history-content-wrapper" onClick={(e) => e.stopPropagation()}>
                         <div className="chat-history-header">
                             <img className="chats-logo" src={logo} alt="T-J logo" />
                             <h2 className="chat-history-title">Т-Ж Ассистент</h2>
@@ -85,46 +167,67 @@ export default function Header({ onLogout, userEmail }) {
                             />
                         </div>
                         <div className="chat-history-content">
-                            <button className="new-chat">
+                            <button
+                                className="new-chat"
+                                onClick={handleCreateNewChat}
+                            >
                                 <img className="new-plus" src={plus} alt="Создать" />
                                 <span className="new-chat-text">Новый чат</span>
                             </button>
                             <div className="chat-history-list">
+                                {chatList.map(chat => (
+                                    <div key={chat.id} className="chat-history-item">
+                                        <h4>{chat.name}</h4>
+                                        <button
+                                            className="chat-history-points"
+                                            onClick={(e) => handleChatPointsClick(chat.id, e)}
+                                        >
+                                            <span>...</span>
+                                        </button>
 
-                                <div className="chat-history-item">
-                                    <h4>Чат 5</h4>
-                                    <span className="chat-history-points">...</span>
-                                </div>
-
-                                <div className="chat-history-item">
-                                    <h4>Чат 4</h4>
-                                    <span className="chat-history-points">...</span>
-                                </div>
-
-                                <div className="chat-history-item">
-                                    <h4>Чат 3</h4>
-                                    <span className="chat-history-points">...</span>
-                                </div>
-
-                                <div className="chat-history-item">
-                                    <h4>Чат 2</h4>
-                                    <span className="chat-history-points">...</span>
-                                </div>
-
-                                <div className="chat-history-item">
-                                    <h4>Чат 1</h4>
-                                    <span className="chat-history-points">...</span>
-                                </div>
+                                        {activeChatMenu === chat.id && (
+                                            <div className="chat-context-menu">
+                                                <button
+                                                    className="chat-menu-rename"
+                                                    onClick={() => handleRenameChat(chat.id)}
+                                                >
+                                                    Переименовать
+                                                </button>
+                                                <button
+                                                    className="chat-menu-delete"
+                                                    onClick={() => handleDeleteChat(chat.id)}
+                                                >
+                                                    Удалить
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                            <button
-                                className="nickname-button"
-                                onClick={handleLogoutClick}
-                                style={{ cursor: 'pointer' }}
-                            >
+                            <div className="nickname-button">
                                 <img className="profile-icon" src={profilelogo} alt="Профиль" />
                                 <span className="nick">{nickname}</span>
-                                <span className="nickname-points">...</span>
-                            </button>
+                                <button
+                                    className="nickname-points"
+                                    onClick={handleProfilePointsClick}
+                                >
+                                    <span>...</span>
+                                </button>
+
+                                {showProfileMenu && (
+                                    <div className="profile-context-menu">
+                                        <button className="profile-menu-settings">
+                                            Настройки
+                                        </button>
+                                        <button
+                                            className="profile-menu-logout"
+                                            onClick={handleLogoutClick}
+                                        >
+                                            Выйти
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

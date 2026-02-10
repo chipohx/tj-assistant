@@ -8,6 +8,7 @@ function App() {
         const token = localStorage.getItem("authToken");
         return !!token;
     });
+    const [showChatHistory, setShowChatHistory] = useState(false);
 
     const handleLogin = async (email, password) => {
         try {
@@ -99,6 +100,7 @@ function App() {
         setIsLoggedIn(false);
         localStorage.removeItem("authToken");
         localStorage.removeItem("userEmail");
+        setShowChatHistory(false);
     };
 
     return (
@@ -108,8 +110,10 @@ function App() {
                     <Header
                         onLogout={handleLogout}
                         userEmail={localStorage.getItem("userEmail")}
+                        showChatHistory={showChatHistory}
+                        setShowChatHistory={setShowChatHistory}
                     />
-                    <Main />
+                    <Main showChatHistory={showChatHistory} />
                 </>
             ) : (
                 <Registration onLogin={handleLogin} onRegister={handleRegister} />
