@@ -184,9 +184,8 @@ h1 {
 
 .assistant-message.dynamic-message {
     position: relative;
-    max-width: 700px;
+    max-width: 850px;
     width: fit-content;
-    /*padding: 20px 0;*/
     min-height: 65px;
     border-radius: 20px;
     background-color: white;
@@ -1176,4 +1175,104 @@ h1 {
     z-index: 1;
     left: 50%;
     transform: translateX(-50%);
+}
+/* Маркдаун обработка */
+.markdown-content {
+    font-family: 'Open Sans Semibold', sans-serif;
+    font-size: 21px;
+    line-height: 1.4;
+    color: #000;
+    word-wrap: break-word;
+    white-space: normal;
+    max-width: 100%;
+}
+
+.markdown-heading {
+    font-family: 'Inter Bold', sans-serif;
+    font-size: 24px;
+    margin: 16px 0 8px 0;
+    color: #000;
+    font-weight: 700;
+}
+
+.markdown-paragraph {
+    margin: 8px 0;
+    font-family: 'Open Sans Semibold', sans-serif;
+    font-size: 21px;
+    line-height: 1.5;
+}
+
+.markdown-paragraph strong {
+    font-family: 'Inter Bold', sans-serif;
+    font-weight: 700;
+}
+
+.markdown-list {
+    margin: 8px 0 8px 24px;
+    padding: 0;
+    list-style-type: none;
+}
+
+.markdown-list-item {
+    position: relative;
+    margin-bottom: 8px;
+    padding-left: 16px;
+    font-family: 'Open Sans Semibold', sans-serif;
+    font-size: 21px;
+    line-height: 1.5;
+}
+
+.markdown-list-item:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #000;
+    font-size: 24px;
+}
+
+.markdown-link {
+    color: #FFBD18 !important;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.markdown-link:hover {
+    text-decoration: underline;
+    color: #e6a800 !important;
+}
+
+.markdown-bracket {
+    font-family: 'Inter Medium', sans-serif;
+    color: #666;
+    font-weight: 500;
+}
+
+.assistant-message.dynamic-message {
+    position: relative;
+    max-width: 850px;
+    width: fit-content;
+    min-height: 65px;
+    border-radius: 20px;
+    background-color: white;
+    word-wrap: break-word;
+    white-space: normal;
+    padding: 20px 34px;
+}
+
+.assistant-message-content {
+    width: 100%;
+}
+
+.assistant-message-text {
+    font-family: 'Open Sans Semibold', sans-serif;
+    font-size: 21px;
+    margin: 0;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+.error-text {
+    color: #d32f2f !important;
 }
