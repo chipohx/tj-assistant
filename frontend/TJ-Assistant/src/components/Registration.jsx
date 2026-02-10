@@ -9,7 +9,7 @@ export default function Registration({ onLogin, onRegister }) {
     const [isEmailValid, setIsEmailValid] = useState(true);
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
-    const [isFormValid, setIsFormValid] = useState(false); // Изменено на false по умолчанию
+    const [isFormValid, setIsFormValid] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -19,13 +19,13 @@ export default function Registration({ onLogin, onRegister }) {
     const handleRegistrationClick = () => {
         setIsRegistration(true);
         setPasswordError("");
-        setPasswordRepeat(""); // Сброс повторного пароля
+        setPasswordRepeat("");
     };
 
     const handleSignInClick = () => {
         setIsRegistration(false);
         setPasswordError("");
-        setPasswordRepeat(""); // Сброс повторного пароля
+        setPasswordRepeat("");
     };
 
     const handleEmailChange = (e) => {
@@ -150,30 +150,37 @@ export default function Registration({ onLogin, onRegister }) {
                 setIsLoading(false);
                 return;
             }
-        } else {
-            if (password.length < 6) {
-                setPasswordError("Пароль должен быть не менее 6 символов");
+
+            try {
+                const result = await onRegister(email, password);
+
+                if (result && result.success) {
+                    alert(result.message);
+                    setIsRegistration(false);
+                    setPassword("");
+                    setPasswordRepeat("");
+                }
+            } catch (error) {
+                console.error("Ошибка регистрации:", error);
+                alert("На вашу почту отправлено письмо с подтверждением. Пожалуйста, проверьте вашу электронную почту.");
+                setIsRegistration(false);
+                setPassword("");
+                setPasswordRepeat("");
+            } finally {
                 setIsLoading(false);
-                return;
             }
-        }
-
-        try {
-            let success;
-            if (isRegistration) {
-                success = await onRegister(email, password);
-            } else {
-                success = await onLogin(email, password);
+        } else {
+            try {
+                const success = await onLogin(email, password);
+                if (!success) {
+                    alert("Ошибка авторизации. Проверьте email и пароль.");
+                }
+            } catch (error) {
+                console.error("Ошибка входа:", error);
+                alert(error.message || "Произошла ошибка. Попробуйте еще раз.");
+            } finally {
+                setIsLoading(false);
             }
-
-            if (!success) {
-                alert("Ошибка авторизации. Проверьте email и пароль.");
-            }
-        } catch (error) {
-            console.error("Ошибка:", error);
-            alert(error.message || "Произошла ошибка. Попробуйте еще раз.");
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -213,7 +220,7 @@ export default function Registration({ onLogin, onRegister }) {
                         type="email"
                         value={email}
                         onChange={handleEmailChange}
-                        onBlur={handleEmailBlur} // Добавлен onBlur
+                        onBlur={handleEmailBlur}
                         required
                         disabled={isLoading}
                         autoComplete="email"
@@ -229,7 +236,7 @@ export default function Registration({ onLogin, onRegister }) {
                         type="password"
                         value={password}
                         onChange={handlePasswordChange}
-                        onBlur={handlePasswordBlur} // Добавлен onBlur
+                        onBlur={handlePasswordBlur}
                         required
                         disabled={isLoading}
                         autoComplete={isRegistration ? "new-password" : "current-password"}
@@ -243,7 +250,7 @@ export default function Registration({ onLogin, onRegister }) {
                             type="password"
                             value={passwordRepeat}
                             onChange={handlePasswordRepeatChange}
-                            onBlur={handlePasswordRepeatBlur} // Добавлен onBlur
+                            onBlur={handlePasswordRepeatBlur}
                             required
                             disabled={isLoading}
                             autoComplete="new-password"

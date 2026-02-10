@@ -81,32 +81,17 @@ function App() {
             console.log("Статус ответа:", response.status);
             console.log("Текст ответа:", responseText);
 
-            if (!response.ok) {
-                let errorMessage = 'Ошибка регистрации';
-                try {
-                    const errorData = JSON.parse(responseText);
-                    errorMessage = errorData.detail || errorMessage;
-                } catch (e) {
-                    errorMessage = responseText || errorMessage;
-                }
-                throw new Error(errorMessage);
-            }
-
-            const data = JSON.parse(responseText);
-            console.log("✅ Данные регистрации:", data);
-
-            const loginSuccess = await handleLogin(email, password);
-
-            if (loginSuccess) {
-                alert('Регистрация и вход выполнены успешно!');
-                return true;
+            if (response.ok) {
+                console.log("✅ Регистрация успешна, письмо отправлено");
+                return { success: true, message: "На вашу почту отправлено письмо с подтверждением. Пожалуйста, проверьте вашу электронную почту." };
             } else {
-                throw new Error('Не удалось выполнить вход после регистрации');
+                console.log("⚠️ Ответ от сервера не 200, но показываем стандартное сообщение");
+                return { success: true, message: "Если email не был зарегистрирован ранее, на него отправлено письмо с подтверждением. Пожалуйста, проверьте вашу электронную почту." };
             }
+
         } catch (error) {
             console.error('❌ Ошибка регистрации:', error.message);
-            alert(`Ошибка регистрации: ${error.message}\n\nПопробуйте использовать другой email.`);
-            return false;
+            return { success: true, message: "На вашу почту отправлено письмо с подтверждением. Пожалуйста, проверьте вашу электронную почту." };
         }
     };
 
