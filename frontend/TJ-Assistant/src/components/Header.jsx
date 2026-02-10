@@ -133,11 +133,11 @@ export default function Header({ onLogout, userEmail }) {
             {showHelp && (
                 <div className="help-overlay">
                     <div className="help-modal">
+                        <button className="help-close-button" onClick={closeHelp}>
+                            ×
+                        </button>
                         <div className="help-header">
                             <h2 className="help-title">Помощь по ассистенту Т-Ж</h2>
-                            <button className="help-close-button" onClick={closeHelp}>
-                                ×
-                            </button>
                         </div>
                         <div className="help-content">
                             <h3 className="help-description-title">Общая информация</h3>
