@@ -257,12 +257,34 @@ h1 {
     background-color: transparent;
 }
 
-.assistant-message.dynamic-message .robot-icon {
+.welcome-info {
     position: absolute;
-    left: -86px;
-    bottom: 0;
-    height: 70px;
-    width: 70px;
+    top: -55px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+}
+
+.welcome-info .robot-icon {
+    height: 50px;
+    width: 50px;
+}
+
+.welcome-title {
+    font-family: Jura, sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 100%;
+    letter-spacing: 0;
+    color: #FFBD18;
+    align-self: center;
+    position: relative;
+    top: 50%;
+    transform: translateY(-38%);
 }
 
 .assistant-message-text1 {

@@ -254,7 +254,13 @@ export default function Main({
             }}>
                 {(currentChatId || messages.length === 0) && (
                     <div className="assistant-message welcome-message">
-                        <img className="robot-icon" src={robotIcon} alt="robot icon" />
+                        <div
+                            className="welcome-info"
+                        >
+                            <img className="robot-icon" src={robotIcon} alt="robot icon" />
+                            <h2 className="welcome-title">Ассистент Т-Ж</h2>
+                        </div>
+
                         <p className="assistant-message-text">
                             Привет! Я Ассистент Т-Ж — AI-эксперт по статьям.
                         </p>
