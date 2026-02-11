@@ -1,20 +1,24 @@
 import React, { useState } from "react";
 import logo from "../assets/images/robot.png";
 import questionIcon from "../assets/images/question.png";
-import chats from "../assets/images/chats.png";
+import updated from "../assets/images/chats.png";
 import plus from "../assets/images/plus.png";
 import profilelogo from "../assets/images/account.png";
 
-export default function Header({ onLogout, userEmail, showChatHistory, setShowChatHistory }) {
+export default function Header({
+                                   onLogout,
+                                   userEmail,
+                                   showChatHistory,
+                                   setShowChatHistory,
+                                   chats,
+                                   currentChatId,
+                                   onSelectChat,
+                                   onCreateChat,
+                                   onRenameChat,
+                                   onDeleteChat
+                               }) {
     const [activeChatMenu, setActiveChatMenu] = useState(null);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
-    const [chatList, setChatList] = useState([
-        { id: 1, name: "Чат 5" },
-        { id: 2, name: "Чат 4" },
-        { id: 3, name: "Чат 3" },
-        { id: 4, name: "Чат 2" },
-        { id: 5, name: "Чат 1" }
-    ]);
     const [showHelp, setShowHelp] = useState(false);
 
     const getNicknameFromEmail = () => {
@@ -23,16 +27,10 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
         if (atIndex === -1) return userEmail;
         return userEmail.substring(0, atIndex);
     };
-
     const nickname = getNicknameFromEmail();
 
-    const toggleHelp = () => {
-        setShowHelp(!showHelp);
-    };
-
-    const closeHelp = () => {
-        setShowHelp(false);
-    };
+    const toggleHelp = () => setShowHelp(!showHelp);
+    const closeHelp = () => setShowHelp(false);
 
     const toggleChatHistory = () => {
         setShowChatHistory(!showChatHistory);
@@ -47,9 +45,7 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
     };
 
     const handleLogoutClick = () => {
-        if (onLogout) {
-            onLogout();
-        }
+        if (onLogout) onLogout();
     };
 
     const handleChatPointsClick = (chatId, e) => {
@@ -65,46 +61,21 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
     };
 
     const handleCreateNewChat = () => {
-        const maxId = chatList.reduce((max, chat) => Math.max(max, chat.id), 0);
-        const newChatId = maxId + 1;
-
-        const newChat = {
-            id: newChatId,
-            name: `Чат ${newChatId}`
-        };
-
-        setChatList(prev => [newChat, ...prev]);
-
-        setTimeout(() => {
-            const newName = prompt("Введите название для нового чата:", newChat.name);
-
-            if (newName && newName.trim() !== "") {
-                setChatList(prev =>
-                    prev.map(chat =>
-                        chat.id === newChatId ? { ...chat, name: newName.trim() } : chat
-                    )
-                );
-            }
-        }, 50);
+        onCreateChat(); // теперь создаёт через API
     };
 
     const handleRenameChat = (chatId) => {
-        const newName = prompt("Введите новое название чата:",
-            chatList.find(chat => chat.id === chatId)?.name || "");
-
+        const currentTitle = chats.find(chat => chat.id === chatId)?.title || "";
+        const newName = prompt("Введите новое название чата:", currentTitle);
         if (newName && newName.trim() !== "") {
-            setChatList(prevChats =>
-                prevChats.map(chat =>
-                    chat.id === chatId ? { ...chat, name: newName.trim() } : chat
-                )
-            );
+            onRenameChat(chatId, newName.trim());
         }
         setActiveChatMenu(null);
     };
 
     const handleDeleteChat = (chatId) => {
         if (window.confirm("Вы уверены, что хотите удалить этот чат?")) {
-            setChatList(prevChats => prevChats.filter(chat => chat.id !== chatId));
+            onDeleteChat(chatId);
         }
         setActiveChatMenu(null);
     };
@@ -114,36 +85,39 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
             setActiveChatMenu(null);
             setShowProfileMenu(false);
         };
-
         if (showChatHistory) {
             document.addEventListener('click', handleClickOutside);
-            return () => {
-                document.removeEventListener('click', handleClickOutside);
-            };
+            return () => document.removeEventListener('click', handleClickOutside);
         }
     }, [showChatHistory]);
 
     return (
         <>
-            <header className="header">
-                <img className="header-logo" src={logo} alt="T-J logo" />
-                <nav className="header-icons">
-                    <img
-                        className="chats-icon"
-                        src={chats}
-                        alt="chats icon"
-                        onClick={toggleChatHistory}
-                        style={{ cursor: 'pointer' }}
-                    />
-                    <img
-                        className="plus-icon"
-                        src={plus}
-                        alt="plus icon"
-                    />
-                </nav>
-                <div className="header-description">
-                    <h1 className="current-chat">Чат 1</h1>
+            <header className={`header ${showChatHistory ? 'sidebar-open' : ''}`}>
+                <div className="header-left">
+                    <img className="header-logo" src={logo} alt="T-J logo" />
+                    <nav className="header-icons">
+                        <img
+                            className="chats-icon"
+                            src={updated}
+                            alt="chats icon"
+                            onClick={toggleChatHistory}
+                            style={{ cursor: 'pointer' }}
+                        />
+                        <img
+                            className="plus-icon"
+                            src={plus}
+                            alt="plus icon"
+                        />
+                    </nav>
                 </div>
+
+                <div className="header-description">
+                    <h1 className="current-chat">
+                        {chats.find(c => c.id === currentChatId)?.title || "Чат"}
+                    </h1>
+                </div>
+
                 <img
                     className="question-icon"
                     src={questionIcon}
@@ -152,6 +126,7 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
                     style={{ cursor: 'pointer' }}
                 />
             </header>
+
             {showChatHistory && (
                 <div className="chat-history-sidebar">
                     <div className="chat-history-content-wrapper" onClick={(e) => e.stopPropagation()}>
@@ -160,7 +135,7 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
                             <h2 className="chat-history-title">Т-Ж Ассистент</h2>
                             <img
                                 className="close-chats-icon"
-                                src={chats}
+                                src={updated}
                                 alt="chats icon"
                                 style={{ cursor: 'pointer' }}
                                 onClick={closeChatHistory}
@@ -175,9 +150,13 @@ export default function Header({ onLogout, userEmail, showChatHistory, setShowCh
                                 <span className="new-chat-text">Новый чат</span>
                             </button>
                             <div className="chat-history-list">
-                                {chatList.map(chat => (
-                                    <div key={chat.id} className="chat-history-item">
-                                        <h4>{chat.name}</h4>
+                                {chats.map(chat => (
+                                    <div
+                                        key={chat.id}
+                                        className={`chat-history-item ${currentChatId === chat.id ? 'active' : ''}`}
+                                        onClick={() => onSelectChat(chat.id)}  // ← выбор чата
+                                    >
+                                        <h4>{chat.title}</h4>
                                         <button
                                             className="chat-history-points"
                                             onClick={(e) => handleChatPointsClick(chat.id, e)}

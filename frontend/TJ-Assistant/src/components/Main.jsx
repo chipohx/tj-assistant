@@ -188,15 +188,16 @@ const MarkdownRenderer = ({ text }) => {
     );
 };
 
-export default function Main({ showChatHistory }) {
+export default function Main({
+                                 showChatHistory,
+                                 currentChatId,
+                                 messages,
+                                 onSendMessage,
+                                 isLoading
+                             }) {
     const [message, setMessage] = useState("");
-    const [messages, setMessages] = useState([]);
     const [copiedMessageId, setCopiedMessageId] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentChatId, setCurrentChatId] = useState(null);
     const textareaRef = useRef(null);
-
-    const API_BASE_URL = "http://localhost:8000/api";
 
     const adjustTextareaHeight = () => {
         const textarea = textareaRef.current;
@@ -212,114 +213,14 @@ export default function Main({ showChatHistory }) {
         adjustTextareaHeight();
     }, [message]);
 
-    const sendMessageToServer = async (content, chatId = null) => {
-        try {
-            const token = localStorage.getItem("authToken");
-            const headers = {
-                "Content-Type": "application/json",
-            };
-
-            if (token) {
-                headers["Authorization"] = `Bearer ${token}`;
-            }
-
-            const requestBody = {
-                content: content,
-            };
-
-            if (chatId) {
-                requestBody.chat_id = chatId;
-            }
-
-            console.log("Отправка запроса на /chat:", {
-                url: `${API_BASE_URL}/chat`,
-                headers,
-                body: requestBody
-            });
-
-            const response = await fetch(`${API_BASE_URL}/chat`, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(requestBody),
-                credentials: "include"
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Ошибка сервера:", response.status, errorText);
-
-                let errorMessage = `Ошибка: ${response.status}`;
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    if (errorJson.detail) {
-                        errorMessage = errorJson.detail;
-                    }
-                } catch (e) {
-                    if (errorText) {
-                        errorMessage = errorText;
-                    }
-                }
-
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
-            console.log("Ответ от сервера:", data);
-            return data;
-        } catch (error) {
-            console.error("Ошибка при отправке сообщения:", error);
-            throw error;
-        }
-    };
-
     const handleSendMessage = async () => {
         if (message.trim() === "" || isLoading) return;
-
-        const userMessage = {
-            id: Date.now().toString(),
-            type: "user",
-            text: message,
-            timestamp: new Date().toISOString()
-        };
-
-        setMessages(prev => [...prev, userMessage]);
         const currentMessage = message;
         setMessage("");
-        setIsLoading(true);
-
         if (textareaRef.current) {
             textareaRef.current.style.height = '40px';
         }
-
-        try {
-            const response = await sendMessageToServer(currentMessage, currentChatId);
-
-            const assistantMessage = {
-                id: response.message_id || `assistant-${Date.now()}`,
-                type: "assistant",
-                text: response.content,
-                timestamp: response.timestamp || new Date().toISOString()
-            };
-
-            setMessages(prev => [...prev, assistantMessage]);
-
-            if (response.chat_created && !currentChatId) {
-                setCurrentChatId(response.chat_created);
-                console.log("Создан новый чат с ID:", response.chat_created);
-            }
-        } catch (error) {
-            console.error("Полная ошибка:", error);
-            const errorMessage = {
-                id: `error-${Date.now()}`,
-                type: "assistant",
-                text: `Извините, произошла ошибка: ${error.message}. Пожалуйста, попробуйте еще раз.`,
-                timestamp: new Date().toISOString(),
-                isError: true
-            };
-            setMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setIsLoading(false);
-        }
+        await onSendMessage(currentMessage);
     };
 
     const handleKeyPress = (e) => {
@@ -340,13 +241,9 @@ export default function Main({ showChatHistory }) {
         navigator.clipboard.writeText(text)
             .then(() => {
                 setCopiedMessageId(messageId);
-                setTimeout(() => {
-                    setCopiedMessageId(null);
-                }, 2000);
+                setTimeout(() => setCopiedMessageId(null), 2000);
             })
-            .catch(err => {
-                console.error('Ошибка при копировании текста: ', err);
-            });
+            .catch(err => console.error('Ошибка копирования:', err));
     };
 
     return (
@@ -355,42 +252,45 @@ export default function Main({ showChatHistory }) {
                 left: showChatHistory ? '354px' : '4px',
                 width: showChatHistory ? 'calc(100% - 350px)' : '100%'
             }}>
-                <div className="assistant-message welcome-message">
-                    <img className="robot-icon" src={robotIcon} alt="robot icon" />
-                    <p className="assistant-message-text">
-                        Привет! Я Ассистент Т-Ж — AI-эксперт по статьям.
-                    </p>
-                    <p className="assistant-message-text1">
-                        Спросите о финансах, инвестициях, правах, путешествиях или любой другой теме, и я найду для вас ответ в статьях Т-Ж.
-                    </p>
-                    <p className="assistant-message-text2">Попробуйте задать вопрос:</p>
-                    <div className="assistant-message-buttons">
-                        <button
-                            className="assistant-message-button"
-                            onClick={() => handleAssistantButtonClick("Как взять ипотеку?")}
-                        >
-                            Как взять ипотеку?
-                        </button>
-                        <button
-                            className="assistant-message-button"
-                            onClick={() => handleAssistantButtonClick("Налоги для самозанятых")}
-                        >
-                            Налоги для самозанятых
-                        </button>
-                        <button
-                            className="assistant-message-button"
-                            onClick={() => handleAssistantButtonClick("Как экономить на путешествиях?")}
-                        >
-                            Как экономить на путешествиях?
-                        </button>
-                        <button
-                            className="assistant-message-button"
-                            onClick={() => handleAssistantButtonClick("Страхование автомобиля")}
-                        >
-                            Страхование автомобиля
-                        </button>
+                {(currentChatId || messages.length === 0) && (
+                    <div className="assistant-message welcome-message">
+                        <img className="robot-icon" src={robotIcon} alt="robot icon" />
+                        <p className="assistant-message-text">
+                            Привет! Я Ассистент Т-Ж — AI-эксперт по статьям.
+                        </p>
+                        <p className="assistant-message-text1">
+                            Спросите о финансах, инвестициях, правах, путешествиях или любой другой теме, и я найду для вас ответ в статьях Т-Ж.
+                        </p>
+                        <p className="assistant-message-text2">Попробуйте задать вопрос:</p>
+                        <div className="assistant-message-buttons">
+                            <button
+                                className="assistant-message-button"
+                                onClick={() => handleAssistantButtonClick("Как взять ипотеку?")}
+                            >
+                                Как взять ипотеку?
+                            </button>
+                            <button
+                                className="assistant-message-button"
+                                onClick={() => handleAssistantButtonClick("Налоги для самозанятых")}
+                            >
+                                Налоги для самозанятых
+                            </button>
+                            <button
+                                className="assistant-message-button"
+                                onClick={() => handleAssistantButtonClick("Как экономить на путешествиях?")}
+                            >
+                                Как экономить на путешествиях?
+                            </button>
+                            <button
+                                className="assistant-message-button"
+                                onClick={() => handleAssistantButtonClick("Страхование автомобиля")}
+                            >
+                                Страхование автомобиля
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
+
                 <div className="messages-container">
                     {messages.map((msg) => (
                         <div
@@ -399,9 +299,7 @@ export default function Main({ showChatHistory }) {
                         >
                             {msg.type === "user" ? (
                                 <div className="user-message">
-                                    <p className="user-message-text">
-                                        {msg.text}
-                                    </p>
+                                    <p className="user-message-text">{msg.text}</p>
                                     <img
                                         className="copy-icon"
                                         src={copyButton}
