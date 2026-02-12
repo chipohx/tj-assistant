@@ -8,6 +8,12 @@ export default defineConfig({
         sourcemap: false,
     },
     server: {
+        headers: {
+            'Content-Security-Policy': "script-src 'self' 'unsafe-inline' 'unsafe-eval';",
+            'Cache-Control': 'no-cache, no-store, must-revalidate', // отключаем кэш
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        },
         port: 3000,
         proxy: {
             '/api': {

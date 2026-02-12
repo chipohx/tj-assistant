@@ -18,9 +18,7 @@ async def send_verification_email(email: str):
         print(f"Couldn't create verification_token: {e}")
 
     print(verification_token)
-    verification_url = (
-        f"http://localhost:8000/api/auth/verify-email?token={verification_token}"
-    )
+    verification_url = f"http://localhost:3000/activate?token={verification_token}"
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     filepath = os.path.join(script_dir, "..", "templates", "mail.html")

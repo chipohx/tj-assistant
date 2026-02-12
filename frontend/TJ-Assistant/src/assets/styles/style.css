@@ -1653,3 +1653,112 @@ body.chat-history-open .header {
 .chat-history-sidebar.closing {
     animation: slideOut 0.3s ease-out;
 }
+
+
+
+/* Стили подтверждения реги */
+
+/* Verify Email Styles */
+.verify-email-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 480px;
+    padding: 40px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.verify-logo {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 24px;
+}
+
+.verify-title {
+    font-family: 'Open Sans Bold', sans-serif;
+    font-size: 24px;
+    margin-bottom: 16px;
+    color: #1A1A1A;
+}
+
+.verify-title.success {
+    color: #22C55E;
+}
+
+.verify-title.error {
+    color: #EF4444;
+}
+
+.verify-message {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #6B7280;
+    margin-bottom: 24px;
+}
+
+.verify-message.success {
+    color: #22C55E;
+}
+
+.verify-message.error {
+    color: #EF4444;
+}
+
+.verify-redirect {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    color: #9CA3AF;
+}
+
+.verify-loading {
+    margin: 20px 0;
+}
+
+.verify-loading span {
+    background-color: #2563EB;
+}
+
+/* Loading Dots Animation (добавьте если еще нет) */
+.loading-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+}
+
+.loading-dots span {
+    width: 10px;
+    height: 10px;
+    background-color: #2563EB;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes pulse {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

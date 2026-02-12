@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Header from "./components/Header.jsx";
 import Main from "./components/Main.jsx";
 import Registration from "./components/Registration.jsx";
+import VerifyEmail from "./components/VerifyEmail.jsx";
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -247,12 +248,16 @@ function App() {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString(),
             });
+            
+            // Регистрация всегда успешна - пользователь получает письмо
             return {
                 success: true,
                 message: "На вашу почту отправлено письмо с подтверждением. Пожалуйста, проверьте вашу электронную почту."
             };
         } catch (error) {
-            console.error('Ошибка регистрации:', error.message);
+            console.error('Ошибка регистрации:', error);
+            // Даже при ошибке отправки письма, аккаунт мог быть создан
+            // Возвращаем сообщение о необходимости проверить почту
             return {
                 success: true,
                 message: "На вашу почту отправлено письмо с подтверждением. Пожалуйста, проверьте вашу электронную почту."
