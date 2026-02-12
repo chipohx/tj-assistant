@@ -73,3 +73,8 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+
+class DeleteChatResponse(BaseModel):
+    message: str
+    deleted_chat_id: UUID
