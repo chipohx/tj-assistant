@@ -34,20 +34,6 @@
 GIGACHAT_AUTH_KEY=NTZj...
 ```
 
-### 2. OpenRouter API Key
-
-**Опционально** - только если используете OpenRouter в качестве LLM провайдера.
-
-1. Зарегистрируйтесь на [openrouter.ai](https://openrouter.ai/)
-2. Перейдите в [Keys](https://openrouter.ai/keys)
-3. Создайте новый API ключ
-4. Полученный ключ используйте как `OPENROUTER_API_KEY`
-
-**Пример:**
-```
-OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
 ## ⚙️ Настройка переменных окружения
 
 ### Backend (.env или docker-compose.yaml)
@@ -73,24 +59,6 @@ HF_TOKEN=ваш-hf-токен
 token=ваш-hf_token
 ```
 
-**Для использования OpenRouter (например, Qwen3):**
-```env
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=ваш-openrouter-ключ
-OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
-QDRANT_URL=http://qdrant:6333
-QDRANT_COLLECTION=tj
-EMBEDDING_MODEL_NAME=intfloat/multilingual-e5-large
-HF_TOKEN=ваш-hf-токен
-token=ваш-hf_token
-```
-
-**Доступные OpenRouter модели:**
-- `qwen/qwen3-next-80b-a3b-instruct:free` - Qwen3 Next 80B (бесплатная)
-- `meta-llama/llama-3.1-70b-instruct` - Llama 3.1 70B
-- `anthropic/claude-3.5-sonnet` - Claude 3.5 Sonnet
-- См. полный список на [openrouter.ai/models](https://openrouter.ai/models)
-
 ## 🚀 Быстрый старт
 
 ### 1. Клонируйте репозиторий
@@ -110,14 +78,6 @@ LLM_PROVIDER=gigachat
 GIGACHAT_AUTH_KEY=ваш-gigachat-token
 QDRANT_URL=http://qdrant:6333
 QDRANT_COLLECTION=tj
-
-# Вариант 2: Использование OpenRouter (например, Qwen3)
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=ваш-openrouter-ключ
-OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
-QDRANT_URL=http://qdrant:6333
-QDRANT_COLLECTION=tj
-```
 
 ### 3. Запустите все сервисы
 
@@ -262,9 +222,6 @@ docker compose up -d indexer
 
 ## 🔧 Конфигурация
 
-### Выбор LLM провайдера
-
-Проект поддерживает несколько LLM провайдеров (пока 2). Переключение осуществляется через переменную `LLM_PROVIDER` в `tj-ml/.env`.
 
 #### GigaChat (по умолчанию)
 
@@ -279,23 +236,6 @@ GIGACHAT_AUTH_KEY=ваш-gigachat-token
 - `GigaChat-Plus` - премиум модель
 
 Для изменения модели GigaChat отредактируйте `tj-ml/src/app/services/llm.py` в функции `_get_gigachat_llm()`.
-
-#### OpenRouter
-
-```env
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=ваш-openrouter-ключ
-OPENROUTER_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
-```
-
-**Популярные модели OpenRouter:**
-- `qwen/qwen3-next-80b-a3b-instruct:free` - Qwen3 Next 80B (бесплатная, быстрая)
-- `meta-llama/llama-3.1-70b-instruct` - Llama 3.1 70B
-- `anthropic/claude-3.5-sonnet` - Claude 3.5 Sonnet
-- `google/gemini-pro-1.5` - Gemini Pro 1.5
-- `openai/gpt-4o` - GPT-4o
-
-Полный список моделей: [openrouter.ai/models](https://openrouter.ai/models)
 
 ### Модель эмбеддингов
 
@@ -469,82 +409,9 @@ curl "http://localhost:8001/eval/report?run_id=<run_id>"
 - Убедитесь, что ключ не истёк (проверьте на [developers.sber.ru](https://developers.sber.ru/))
 - Проверьте логи: `docker compose logs ml -f`
 
-**OpenRouter:**
-- Проверьте корректность `OPENROUTER_API_KEY`
-- Убедитесь, что на балансе OpenRouter есть средства (для платных моделей)
-- Проверьте доступность модели на [openrouter.ai/models](https://openrouter.ai/models)
-- Для бесплатных моделей (с суффиксом `:free`) баланс не требуется
-- Проверьте логи: `docker compose logs ml -f`
-
-### Переключение между провайдерами
-1. Обновите `LLM_PROVIDER` в `tj-ml/.env`
-2. Добавьте соответствующий API ключ
-3. Перезапустите ML сервис: `docker compose restart ml`
-
 ### Высокий расход токенов
 - Уменьшите `top_k` (количество документов в контексте) в запросе
 - Используйте более эффективную модель
 - Проверьте размер документов в векторной БД
 - Оптимизируйте промпт в `tj-ml/src/app/services/rag_chain.py`
 - Мониторьте логи: `docker compose logs ml | grep "Token Usage"`
-
-### PostgreSQL не запускается
-- Если видите ошибку о версии 18+, используется `postgres:16` в docker-compose.yaml
-- Очистите volumes: `docker compose down -v && docker compose up -d`
-
-## 📝 Структура проекта
-
-```
-.
-├── backend/              # FastAPI backend
-│   ├── app/
-│   │   ├── api/         # Эндпоинты
-│   │   ├── core/        # Конфигурация, безопасность
-│   │   ├── database/    # Подключение к БД
-│   │   ├── models/      # SQLAlchemy модели
-│   │   └── services/    # Бизнес-логика
-│   ├── migrations/      # Alembic миграции
-│   └── requirements.txt
-├── frontend/
-│   └── TJ-Assistant/    # React + Vite приложение
-├── tj-ml/               # ML RAG сервис
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── services/   # RAG, эмбеддинги, LLM
-│   │   │   ├── schemas/    # Pydantic модели
-│   │   │   └── main.py     # FastAPI приложение
-│   │   ├── data/           # Статьи и golden dataset
-│   │   └── index.py        # Скрипт индексации
-│   └── requirements.txt
-└── docker-compose.yaml
-```
-
-## 🤝 Разработка
-
-### Локальная разработка Backend
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-### Локальная разработка ML Service
-
-```bash
-cd tj-ml/src
-python -m venv venv
-source venv/bin/activate
-pip install -r ../requirements.txt
-uvicorn app.main:app --reload --port 8001
-```
-
-### Локальная разработка Frontend
-
-```bash
-cd frontend/TJ-Assistant
-npm install
-npm run dev
-```

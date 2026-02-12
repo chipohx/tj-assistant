@@ -1,54 +1,72 @@
+"""
+Модуль инициализации языковой модели GigaChat.
+
+Предоставляет фабричные функции для создания экземпляров LLM:
+- get_llm() — основная модель для генерации ответов и агентного цикла.
+- get_llm_for_tools() — модель с привязанными инструментами (tool calling).
+
+Используется GigaChat API от Сбера. Поддерживаются модели:
+GigaChat (базовая), GigaChat-Pro (рекомендуемая), GigaChat-Max (максимальная).
+"""
+
 from functools import lru_cache
-from typing import Union
+from typing import List
+
 from langchain_core.language_models import BaseChatModel
+from langchain_core.tools import BaseTool
 from langchain_gigachat.chat_models import GigaChat
-from langchain_openai import ChatOpenAI
+
 from app.core.config import get_settings
+from app.core.logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 @lru_cache(maxsize=1)
-def get_llm() -> BaseChatModel:
+def get_llm() -> GigaChat:
     """
-    Фабрика для создания инстанса ЛЛМ
-    Сейчас поддержвает GigaChat and OpenRouter providers.
-    
+    Создать и закешировать экземпляр GigaChat LLM.
+
+    Параметры модели (model, temperature, max_tokens) берутся из конфигурации.
+    SSL-верификация отключена для совместимости с корпоративными прокси.
+
     Returns:
-        BaseChatModel: Initialized LLM instance
-    
+        GigaChat: Инициализированный экземпляр языковой модели.
+
     Raises:
-        ValueError: If unsupported LLM provider is specified
+        Exception: При ошибке инициализации GigaChat (невалидный ключ и т.п.).
     """
     settings = get_settings()
-    provider = settings.llm_provider.lower()
-    
-    if provider == "gigachat":
-        return _get_gigachat_llm()
-    elif provider == "openrouter":
-        return _get_openrouter_llm()
-    else:
-        raise ValueError(
-            f"Unsupported LLM provider: {provider}. "
-            f"Supported providers: gigachat, openrouter"
-        )
 
+    logger.info(
+        "Инициализация GigaChat: model=%s, temperature=%.2f, max_tokens=%d",
+        settings.gigachat_model,
+        settings.gigachat_temperature,
+        settings.gigachat_max_tokens,
+    )
 
-def _get_gigachat_llm() -> GigaChat:
-    """Initialize GigaChat LLM."""
-    settings = get_settings()
     return GigaChat(
         credentials=settings.gigachat_auth_key,
-        model="GigaChat",
+        model=settings.gigachat_model,
+        temperature=settings.gigachat_temperature,
+        max_tokens=settings.gigachat_max_tokens,
         verify_ssl_certs=False,
     )
 
 
-def _get_openrouter_llm() -> ChatOpenAI:
-    """Initialize OpenRouter LLM (OpenAI-compatible API)."""
-    settings = get_settings()
-    return ChatOpenAI(
-        model=settings.openrouter_model,
-        openai_api_key=settings.openrouter_api_key,
-        openai_api_base="https://openrouter.ai/api/v1",
-        temperature=0.7,
-        max_tokens=2000,
-    )
+def get_llm_with_tools(tools: List[BaseTool]) -> BaseChatModel:
+    """
+    Получить экземпляр LLM с привязанными инструментами для агентного цикла.
+
+    Привязывает список LangChain-инструментов к модели через bind_tools().
+    Это позволяет модели генерировать вызовы инструментов (function calling).
+
+    Args:
+        tools: Список инструментов LangChain (BaseTool), доступных модели.
+
+    Returns:
+        BaseChatModel: Модель GigaChat с привязанными инструментами.
+    """
+    llm = get_llm()
+    return llm.bind_tools(tools)
