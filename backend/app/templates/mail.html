@@ -1,11 +1,235 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <title>{email_subject}</title>
-  </head>
-  <body>
-    <p>{email_message}</p>
-    <a href="{verification_url}">{verification_url_text}</a>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{email_subject}}</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            width: 100%;
+            margin: 0 auto;
+            background-color: #fff;
+            font-family: 'Open Sans Semibold', sans-serif;
+        }}
+        
+        .email-wrapper {{
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }}
+        
+        .email-card {{
+            background-color: #ffffff;
+            border-radius: 20px;
+            border: 2px solid #8a8a8a;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }}
+        
+        .email-header {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #F2F2F2;
+        }}
+        
+        .header-logo {{
+            width: 60px;
+            height: 60px;
+            background-color: #FFBD18;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-family: 'Jura Bold', sans-serif;
+            color: white;
+        }}
+        
+        .header-title {{
+            font-family: 'Jura Bold', sans-serif;
+            font-size: 28px;
+            color: #FFBD18;
+            flex: 1;
+        }}
+        
+        .email-content {{
+            margin-bottom: 10px;
+        }}
+        
+        .email-message {{
+            font-family: 'Open Sans Semibold', sans-serif;
+            font-size: 21px;
+            line-height: 1.5;
+            color: #1A1A1A;
+            margin-top: 25px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #F2F2F2;
+            border-radius: 14px;
+            border: 1px solid #CBC1C1;
+        }}
+        
+        .email-button {{
+            display: inline-block;
+            margin: 20px 0;
+        }}
+        
+        .verify-button {{
+            display: inline-block;
+            background-color: #F7DC5D;
+            color: #000000;
+            text-decoration: none;
+            font-family: 'Open Sans Semibold', sans-serif;
+            font-size: 21px;
+            padding: 16px 40px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(247, 220, 93, 0.3);
+        }}
+
+        .verify-button:hover {{
+            background-color: #4D4D4D;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(77, 77, 77, 0.3);
+        }}
+        
+        .email-link {{
+            margin-top: 20px;
+            text-align: center;
+        }}
+        
+        .email-link a {{
+            font-family: 'Open Sans Semibold', sans-serif;
+            font-size: 16px;
+            color: #FFBD18;
+            text-decoration: none;
+            border-bottom: 1px dashed #FFBD18;
+            transition: color 0.2s ease;
+        }}
+        
+        .email-link a:hover {{
+            color: #e6a800;
+            border-bottom: 1px solid #e6a800;
+        }}
+        
+        .email-footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #F2F2F2;
+            text-align: center;
+        }}
+        
+        .footer-text {{
+            font-family: 'Open Sans Semibold', sans-serif;
+            font-size: 14px;
+            color: #9F8F8F;
+            margin-bottom: 10px;
+        }}
+        
+        .footer-logo {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }}
+        
+        .footer-logo span {{
+            font-family: 'Jura Bold', sans-serif;
+            font-size: 20px;
+            color: #FFBD18;
+        }}
+        
+        .footer-logo .mini-logo {{
+            width: 30px;
+            height: 30px;
+            background-color: #FFBD18;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }}
+        
+        @media screen and (max-width: 600px) {{
+            .email-card {{
+                padding: 25px;
+            }}
+            
+            .email-message {{
+                font-size: 18px;
+                padding: 15px;
+            }}
+            
+            .verify-button {{
+                font-size: 18px;
+                padding: 14px 30px;
+                width: 100%;
+                text-align: center;
+            }}
+            
+            .header-title {{
+                font-size: 24px;
+            }}
+        }}
+        
+        .highlight {{
+            color: #FFBD18;
+            font-weight: 600;
+        }}
+        
+        .email-decoration {{
+            height: 4px;
+            background: linear-gradient(90deg, #FFBD18, #F7DC5D, #FFBD18);
+            border-radius: 2px;
+            margin: 20px 0;
+        }}
+        
+        .icon-placeholder {{
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: #FFBD18;
+            border-radius: 50%;
+            margin-right: 8px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-card">
+            <div class="header-title">🤖 TJ Assistant</div>
+            
+            <div class="email-content">
+                <h1 style="font-family: 'Inter Bold', sans-serif; font-size: 28px; color: #1A1A1A; margin-bottom: 20px; text-align: center; margin-top: 20px">
+                    {email_subject}
+                </h1>
+                
+                <div class="email-decoration"></div>
+                
+                <div class="email-message">
+                    {email_message}
+                </div>
+                
+                <div style="text-align: center;" class="email-button">
+                    <a href="{verification_url}" class="verify-button" style="display: inline-block; background-color: #F7DC5D; color: #000000; text-decoration: none; font-family: 'Open Sans Semibold', sans-serif; font-size: 21px; padding: 16px 40px; border-radius: 50px; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(247, 220, 93, 0.3);" onmouseover="this.style.backgroundColor='#4D4D4D'; this.style.color='white'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(77, 77, 77, 0.3)';" onmouseout="this.style.backgroundColor='#F7DC5D'; this.style.color='#000000'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(247, 220, 93, 0.3)';"> 
+                        Подтвердить регистрацию
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
 </html>
