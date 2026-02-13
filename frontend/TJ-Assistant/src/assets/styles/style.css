@@ -34,7 +34,7 @@ h1 {
     width: 100%;
     height: 80px;
     background-color: white;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid #AAA;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -219,7 +219,7 @@ h1 {
     display: flex;
     flex-direction: column;
     margin: 118px auto 20px auto;
-    border: black solid 2px;
+    border: #AAA solid 1px;
     border-radius: 20px;
     padding: 60px 67px;
     background-color: white;
